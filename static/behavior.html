@@ -25,9 +25,22 @@
   </div>
 
   <div class="section">
-    <h2>请模拟真实交互</h2>
-    <p>移动鼠标、滚动页面、在下方输入框中打字——就像日常使用浏览器一样。
-    首次交互起 30 秒后自动上报；也可以点击按钮提前结束（至少观察 3 秒）。</p>
+    <h2>真实页面采集（推荐）</h2>
+    <p>行为特征与页面 UI 语境绑定——风控采集的是用户在<strong>目标站点真实页面</strong>上的操作
+    （真实输入框的打字节奏、真实按钮的点击时序、真实页面的滚动模式）。
+    请在目标网页的控制台注入嵌入式采集器：</p>
+    <pre class="payload" id="inject-code"></pre>
+    <div class="actions" style="margin-top:10px;">
+      <button id="copy-inject" class="secondary">复制注入代码</button>
+    </div>
+    <p class="muted">注入后页面右上角出现悬浮条：真实操作页面，30s 自动上报或手动提交；
+    记录含 pageContext（页面 URL/标题）与元素形状（与 UI 绑定证据，不含页面文本）。</p>
+  </div>
+
+  <div class="section">
+    <h2>演示模式（仅验证采集器，非真实采集语境）</h2>
+    <p>下方是本平台页面上的采集器演示——行为在平台页面上采集，与目标风控 UI 语境不同，
+    仅用于验证采集链路可用。真实行为数据请在目标网页注入采集。</p>
     <input type="text" id="bh-input-demo" placeholder="在这里打一段文字（示例）" style="max-width:420px;">
     <div class="actions" style="margin-top:12px;">
       <button id="bh-submit" disabled>结束并提交</button>
@@ -57,6 +70,27 @@
     document.getElementById('bh-title').textContent = '行为指纹采集 - ' + entry.name;
   }).catch(function () {
     slugEl.textContent = slug + '（条目信息加载失败）';
+  });
+
+  // 注入代码（含条目 slug 配置）
+  var injectCode =
+    "window.__FP_ENTRY_SLUG='" + slug + "';\n" +
+    "fetch('http://127.0.0.1:8000/static/js/behavior-inject.js').then(function(r){return r.text();}).then(eval);";
+  document.getElementById('inject-code').textContent = injectCode;
+  document.getElementById('copy-inject').addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(injectCode).then(function () {
+        document.getElementById('copy-inject').textContent = '已复制';
+      }).catch(function () { /* 剪贴板失败不阻断 */ });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = injectCode;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      document.getElementById('copy-inject').textContent = '已复制';
+    }
   });
 })();
 </script>

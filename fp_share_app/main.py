@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .application.seed import seed_entries
@@ -28,6 +29,14 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="fingerprint_share", lifespan=lifespan)
+
+# 公开共享平台：采集上报与静态采集器允许跨域（嵌入式采集器在目标站点注入上报）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "static")), name="static")
 app.include_router(public_router)
