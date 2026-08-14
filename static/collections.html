@@ -35,9 +35,34 @@
           <option value="behavior">行为指纹</option>
         </select>
       </div>
-      <div class="filter-item filter-action">
-        <button id="export-btn" class="secondary">导出当前筛选 JSON</button>
+      <div class="filter-item">
+        <label for="facet-uaClass">UA 大类</label>
+        <select id="facet-uaClass" class="facet-select"><option value="">全部</option></select>
       </div>
+      <div class="filter-item">
+        <label for="facet-uaBrowser">UA 小类</label>
+        <select id="facet-uaBrowser" class="facet-select"><option value="">全部</option></select>
+      </div>
+      <div class="filter-item">
+        <label for="facet-os">操作系统</label>
+        <select id="facet-os" class="facet-select"><option value="">全部</option></select>
+      </div>
+      <div class="filter-item">
+        <label for="facet-timezone">时区</label>
+        <select id="facet-timezone" class="facet-select"><option value="">全部</option></select>
+      </div>
+      <div class="filter-item">
+        <label for="facet-screen">屏幕分辨率</label>
+        <select id="facet-screen" class="facet-select"><option value="">全部</option></select>
+      </div>
+      <div class="filter-item">
+        <label for="facet-language">语言</label>
+        <select id="facet-language" class="facet-select"><option value="">全部</option></select>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:14px;">
+      <button id="export-btn" class="secondary">导出当前筛选</button>
+      <button id="export-all-btn" class="secondary">下载全部</button>
     </div>
     <div class="overview-strip" id="overview-strip"></div>
   </div>
@@ -50,7 +75,12 @@
 <script>
 (function () {
   'use strict';
-  var state = { entryId: null, kind: null, page: 1 };
+  var FACET_KEYS = ['uaClass', 'uaBrowser', 'os', 'timezone', 'screen', 'language'];
+  var FACET_LABELS = {
+    uaClass: 'UA 大类', uaBrowser: 'UA 小类', os: '操作系统',
+    timezone: '时区', screen: '屏幕', language: '语言'
+  };
+  var state = { entryId: null, kind: null, facets: {}, page: 1 };
 
   var selectEl = document.getElementById('entry-select');
   var kindEl = document.getElementById('kind-select');
@@ -58,6 +88,9 @@
   var pagerRoot = document.getElementById('pager');
   var detailRoot = document.getElementById('detail-root');
   var exportBtn = document.getElementById('export-btn');
+  var exportAllBtn = document.getElementById('export-all-btn');
+  var facetSelects = {};
+  FACET_KEYS.forEach(function (k) { facetSelects[k] = document.getElementById('facet-' + k); });
 
   var initialEntry = queryParam('entry');
   var initialKind = queryParam('kind');
@@ -79,6 +112,38 @@
     });
   }
 
+  function loadFacets() {
+    var params = [];
+    if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
+    if (state.kind) { params.push('kind=' + state.kind); }
+    return fetchJson('/api/collections/facets' + (params.length ? '?' + params.join('&') : ''))
+      .then(function (data) {
+        FACET_KEYS.forEach(function (key) {
+          var sel = facetSelects[key];
+          var current = sel.value;
+          sel.innerHTML = '<option value="">全部</option>';
+          Object.keys(data[key] || {}).forEach(function (value) {
+            var opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = value + ' (' + data[key][value] + ')';
+            sel.appendChild(opt);
+          });
+          sel.value = current;
+        });
+      })
+      .catch(function () { /* 分面加载失败不阻断列表 */ });
+  }
+
+  function currentFilterParams() {
+    var params = ['page=' + state.page];
+    if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
+    if (state.kind) { params.push('kind=' + state.kind); }
+    FACET_KEYS.forEach(function (k) {
+      if (state.facets[k]) { params.push(k + '=' + encodeURIComponent(state.facets[k])); }
+    });
+    return params.join('&');
+  }
+
   function badge(verdict) {
     if (verdict === 'legit') {
       return '<span class="badge badge-ok">正常</span>';
@@ -91,45 +156,49 @@
 
   function loadPage() {
     listRoot.innerHTML = '<div class="status">正在加载...</div>';
-    var params = ['page=' + state.page];
-    if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
-    if (state.kind) { params.push('kind=' + state.kind); }
     refreshOverview();
-    return fetchJson('/api/collections?' + params.join('&')).then(function (data) {
+    return fetchJson('/api/collections?' + currentFilterParams()).then(function (data) {
       if (!data.items.length) {
-        listRoot.innerHTML = '<div class="status">暂无采集记录。打开<a href="/collect/' +
+        listRoot.innerHTML = '<div class="status">当前筛选下暂无采集记录。打开<a href="/collect/' +
           (initialEntry ? encodeURIComponent(initialEntry) : '') + '">环境采集页</a>或<a href="/collect/' +
           (initialEntry ? encodeURIComponent(initialEntry) : '') + '/behavior">行为采集页</a>产生数据。</div>';
         pagerRoot.innerHTML = '';
         return;
       }
-      var html = '<table><tr><th>ID</th><th>类型</th><th>时间 (UTC)</th><th>摘要</th>' +
-        '<th>耗时</th><th>IP</th><th>操作</th></tr>';
+      var html = '<div class="table-wrap"><table><tr><th>ID</th><th>类型</th><th>时间 (UTC)</th>' +
+        '<th>UA 大类</th><th>UA 小类</th><th>OS</th><th>时区</th><th>屏幕</th><th>语言</th>' +
+        '<th>摘要</th><th>操作</th></tr>';
       data.items.forEach(function (r) {
         var summary = null;
         try { summary = JSON.parse(r.summary); } catch (e) { summary = null; }
+        var facets = (summary && summary.facets) || {};
         var kindLabel = r.kind === 'behavior' ? '行为' : '环境';
+        function facetCell(value) {
+          return value ? '<span class="badge">' + escapeHtml(value) + '</span>' : '<span class="muted">-</span>';
+        }
         var summaryCell = '-';
         if (r.kind === 'behavior' && summary) {
-          var b = summary;
-          summaryCell = badge(b.verdict) + ' score=' + escapeHtml(b.score) +
-            (b.dimensions ? ' events=' + (b.dimensions.mousemove || 0) + '/' +
-              (b.dimensions.keydown || 0) + '/' + (b.dimensions.wheel || 0) : '');
+          summaryCell = badge(summary.verdict) + ' score=' + escapeHtml(summary.score) +
+            (summary.dimensions ? ' ev=' + (summary.dimensions.mousemove || 0) + '/' +
+              (summary.dimensions.keydown || 0) : '');
         } else if (summary) {
-          var visitorId = summary.visitorId ? summary.visitorId.slice(0, 16) + '...' : '-';
-          var errNote = summary.errors && summary.errors.length ? ('，错误 ' + summary.errors.length) : '';
-          summaryCell = 'visitorId=' + escapeHtml(visitorId) + '，维度=' +
-            (summary.dimensions !== undefined ? summary.dimensions : '-') + escapeHtml(errNote);
+          var visitorId = summary.visitorId ? summary.visitorId.slice(0, 12) + '...' : '-';
+          summaryCell = 'vid=' + escapeHtml(visitorId) + '，维度=' +
+            (summary.dimensions !== undefined ? summary.dimensions : '-');
         }
         html += '<tr><td>' + r.id + '</td>' +
           '<td>' + kindLabel + '</td>' +
           '<td>' + escapeHtml(shortTime(r.collected_at)) + '</td>' +
+          '<td>' + facetCell(facets.uaClass) + '</td>' +
+          '<td>' + facetCell(facets.uaBrowser) + '</td>' +
+          '<td>' + facetCell(facets.os) + '</td>' +
+          '<td>' + facetCell(facets.timezone) + '</td>' +
+          '<td>' + facetCell(facets.screen) + '</td>' +
+          '<td>' + facetCell(facets.language) + '</td>' +
           '<td>' + summaryCell + '</td>' +
-          '<td>' + (r.duration_ms === null ? '-' : r.duration_ms + 'ms') + '</td>' +
-          '<td>' + escapeHtml(r.visitor_ip || '-') + '</td>' +
           '<td><a href="#" data-id="' + r.id + '" class="detail-link">详情</a></td></tr>';
       });
-      html += '</table>';
+      html += '</table></div>';
       listRoot.innerHTML = html;
 
       var totalPages = Math.max(1, Math.ceil(data.total / data.page_size));
@@ -468,6 +537,20 @@
   function refresh() {
     state.entryId = selectEl.value ? Number(selectEl.value) : null;
     state.kind = kindEl.value || null;
+    state.facets = {};
+    FACET_KEYS.forEach(function (k) {
+      if (facetSelects[k].value) { state.facets[k] = facetSelects[k].value; }
+    });
+    state.page = 1;
+    detailRoot.innerHTML = '';
+    loadFacets().then(loadPage);
+  }
+
+  function refreshFacetOnly() {
+    state.facets = {};
+    FACET_KEYS.forEach(function (k) {
+      if (facetSelects[k].value) { state.facets[k] = facetSelects[k].value; }
+    });
     state.page = 1;
     detailRoot.innerHTML = '';
     loadPage();
@@ -477,6 +560,9 @@
     var strip = document.getElementById('overview-strip');
     var base = [];
     if (state.entryId !== null) { base.push('entry_id=' + state.entryId); }
+    FACET_KEYS.forEach(function (k) {
+      if (state.facets[k]) { base.push(k + '=' + encodeURIComponent(state.facets[k])); }
+    });
     var queries = [];
     var labels = [];
     if (state.kind) {
@@ -505,15 +591,31 @@
 
   selectEl.addEventListener('change', refresh);
   kindEl.addEventListener('change', refresh);
+  FACET_KEYS.forEach(function (k) {
+    facetSelects[k].addEventListener('change', refreshFacetOnly);
+  });
 
-  exportBtn.addEventListener('click', function () {
+  function exportParams(withFacets) {
     var params = [];
     if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
     if (state.kind) { params.push('kind=' + state.kind); }
-    location.href = '/api/export' + (params.length ? '?' + params.join('&') : '');
+    if (withFacets) {
+      FACET_KEYS.forEach(function (k) {
+        if (state.facets[k]) { params.push(k + '=' + encodeURIComponent(state.facets[k])); }
+      });
+    }
+    return params.length ? '?' + params.join('&') : '';
+  }
+
+  exportBtn.addEventListener('click', function () {
+    location.href = '/api/export' + exportParams(true);
   });
 
-  loadEntries().then(loadPage).catch(function (err) {
+  exportAllBtn.addEventListener('click', function () {
+    location.href = '/api/export' + exportParams(false);
+  });
+
+  loadEntries().then(loadFacets).then(loadPage).catch(function (err) {
     listRoot.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
   });
 })();

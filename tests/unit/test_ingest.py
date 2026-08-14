@@ -64,4 +64,70 @@ def test_ingest_summary_string_and_dict(conn):
     id_str = collections_uc.ingest(conn, entry["slug"], {"a": 1}, summary='{"k": "v"}')
     for record_id in (id_dict, id_str):
         row = conn.execute("SELECT summary FROM collections WHERE id = ?", (record_id,)).fetchone()
-        assert json.loads(row["summary"]) == {"k": "v"}
+        parsed = json.loads(row["summary"])
+        assert parsed["k"] == "v"
+        assert "facets" in parsed
+
+
+def test_ingest_facets_extraction(conn):
+    entry = _seed_entry(conn)
+    payload = {
+        "components": {
+            "navigator": {"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0",
+                          "language": "zh-CN"},
+            "intl": {"timeZone": "Asia/Shanghai"},
+            "screen": {"width": 1920, "height": 1080},
+        }
+    }
+    record_id = collections_uc.ingest(conn, entry["slug"], payload,
+                                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0")
+    row = conn.execute("SELECT summary FROM collections WHERE id = ?", (record_id,)).fetchone()
+    facets = json.loads(row["summary"])["facets"]
+    assert facets["uaClass"] == "desktop"
+    assert facets["uaBrowser"] == "Chrome"
+    assert facets["os"] == "Windows"
+    assert facets["timezone"] == "Asia/Shanghai"
+    assert facets["screen"] == "1920x1080"
+    assert facets["language"] == "zh-CN"
+
+
+def test_ingest_facets_bot_mobile(conn):
+    entry = _seed_entry(conn)
+    bot_id = collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                                   user_agent="python-requests/2.31")
+    mobile_id = collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                                      user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile Safari/604")
+    bot_facets = json.loads(conn.execute(
+        "SELECT summary FROM collections WHERE id = ?", (bot_id,)).fetchone()[0])["facets"]
+    mobile_facets = json.loads(conn.execute(
+        "SELECT summary FROM collections WHERE id = ?", (mobile_id,)).fetchone()[0])["facets"]
+    assert bot_facets["uaClass"] == "bot"
+    assert mobile_facets["uaClass"] == "mobile"
+    assert mobile_facets["uaBrowser"] == "Safari"
+    assert mobile_facets["os"] == "iOS"
+
+
+def test_list_filter_by_facets(conn):
+    entry = _seed_entry(conn)
+    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                          user_agent="Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
+    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                          user_agent="Mozilla/5.0 (Macintosh) Safari/605.1")
+    win = collections_uc.list_collections(conn, facets={"os": "Windows"})
+    mac = collections_uc.list_collections(conn, facets={"os": "macOS"})
+    assert win["total"] == 1
+    assert mac["total"] == 1
+
+
+def test_list_facets_aggregation(conn):
+    entry = _seed_entry(conn)
+    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                          user_agent="Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
+    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                          user_agent="Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
+    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+                          user_agent="Mozilla/5.0 (Macintosh) Safari/605.1")
+    facets = collections_uc.list_facets(conn)
+    assert facets["os"]["Windows"] == 2
+    assert facets["os"]["macOS"] == 1
+    assert facets["uaBrowser"]["Chrome"] == 2

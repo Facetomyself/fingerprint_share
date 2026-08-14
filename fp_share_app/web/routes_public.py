@@ -7,7 +7,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from ..application import collections as collections_uc
@@ -139,12 +139,31 @@ async def api_ingest(request: Request, conn: sqlite3.Connection = Depends(get_db
 
 @router.get("/api/collections")
 def api_list_collections(entry_id: int | None = None, kind: str | None = None, page: int = 1,
+                         uaClass: str | None = Query(None, alias="uaClass"),
+                         uaBrowser: str | None = Query(None, alias="uaBrowser"),
+                         os: str | None = None,
+                         tz: str | None = Query(None, alias="timezone"),
+                         screen: str | None = None, language: str | None = None,
                          conn: sqlite3.Connection = Depends(get_db)):
     if kind is not None and kind not in ("environment", "behavior"):
         raise HTTPException(status_code=422, detail="kind 必须是 environment 或 behavior")
     if page < 1:
         page = 1
-    return collections_uc.list_collections(conn, entry_id=entry_id, kind=kind, page=page)
+    facets = {
+        "uaClass": uaClass, "uaBrowser": uaBrowser, "os": os,
+        "timezone": tz, "screen": screen, "language": language,
+    }
+    facets = {k: v for k, v in facets.items() if v}
+    return collections_uc.list_collections(conn, entry_id=entry_id, kind=kind,
+                                           facets=facets or None, page=page)
+
+
+@router.get("/api/collections/facets")
+def api_list_facets(entry_id: int | None = None, kind: str | None = None,
+                    conn: sqlite3.Connection = Depends(get_db)):
+    if kind is not None and kind not in ("environment", "behavior"):
+        raise HTTPException(status_code=422, detail="kind 必须是 environment 或 behavior")
+    return collections_uc.list_facets(conn, entry_id=entry_id, kind=kind)
 
 
 @router.get("/api/collections/{collection_id}")
@@ -157,10 +176,21 @@ def api_get_collection(collection_id: int, conn: sqlite3.Connection = Depends(ge
 
 @router.get("/api/export")
 def api_export(entry_id: int | None = None, kind: str | None = None,
+               uaClass: str | None = Query(None, alias="uaClass"),
+               uaBrowser: str | None = Query(None, alias="uaBrowser"),
+               os: str | None = None,
+               tz: str | None = Query(None, alias="timezone"),
+               screen: str | None = None, language: str | None = None,
                conn: sqlite3.Connection = Depends(get_db)):
     if kind is not None and kind not in ("environment", "behavior"):
         raise HTTPException(status_code=422, detail="kind 必须是 environment 或 behavior")
-    data = collections_uc.export_collections(conn, entry_id=entry_id, kind=kind)
+    facets = {
+        "uaClass": uaClass, "uaBrowser": uaBrowser, "os": os,
+        "timezone": tz, "screen": screen, "language": language,
+    }
+    facets = {k: v for k, v in facets.items() if v}
+    data = collections_uc.export_collections(conn, entry_id=entry_id, kind=kind,
+                                             facets=facets or None)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     filename = f"fingerprints-{stamp}.json"
     return JSONResponse(
