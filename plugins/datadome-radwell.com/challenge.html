@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataDome 挑战复刻 - radwell.com</title>
+<style>
+  /* 复刻 DataDome 挑战页行为逻辑的结构样式（不复制原站版权内容，只还原交互语义） */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    background: #0b0b10;
+    color: #e8e8ec;
+  }
+  #challenge-root {
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 30px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 16px 40px rgba(0, 0, 0, 0.5);
+  }
+  .dd-title { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+  .dd-sub { font-size: 12.5px; color: #8f8f9c; margin: 0 0 18px; }
+  .dd-status {
+    font-size: 13px;
+    color: #b9b9c6;
+    padding: 10px 0;
+    min-height: 40px;
+    transition: color 200ms ease;
+  }
+  .dd-status.done { color: #4cd964; }
+  .dd-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-top-color: #4cd964;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: -2px;
+    animation: dd-spin 900ms linear infinite;
+  }
+  @keyframes dd-spin { to { transform: rotate(360deg); } }
+  .dd-btn {
+    display: block;
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 150ms ease, transform 120ms ease;
+  }
+  .dd-btn:hover { background: rgba(255, 255, 255, 0.10); }
+  .dd-btn:active { transform: scale(0.97); }
+  .dd-btn.primary {
+    background: rgba(76, 217, 100, 0.16);
+    border-color: rgba(76, 217, 100, 0.4);
+    color: #4cd964;
+  }
+  .dd-btn.primary:hover { background: rgba(76, 217, 100, 0.24); }
+  .dd-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .dd-input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-size: 22px;
+    letter-spacing: 12px;
+    text-align: center;
+    font-family: "SF Mono", ui-monospace, monospace;
+    outline: none;
+    margin-top: 10px;
+  }
+  .dd-input:focus { border-color: rgba(76, 217, 100, 0.5); }
+  .dd-hidden { display: none; }
+  .dd-row { margin-top: 12px; }
+</style>
+<script src="behavior-core.js"></script>
+<script src="challenge-bridge.js"></script>
+</head>
+<body>
+<div id="challenge-root">
+  <p class="dd-title">正在验证您的浏览器</p>
+  <p class="dd-sub">DataDome 挑战流程复刻 · radwell.com</p>
+  <div id="dd-status" class="dd-status"><span class="dd-spinner"></span>正在初始化验证...</div>
+  <div id="dd-captcha-zone" class="dd-hidden">
+    <button id="dd-audio-btn" class="dd-btn">获取音频验证码</button>
+    <div id="dd-input-zone" class="dd-hidden">
+      <input id="dd-code-input" class="dd-input" maxlength="6" inputmode="numeric"
+             placeholder="6 位数字" autocomplete="off">
+      <div class="dd-row">
+        <button id="dd-submit-btn" class="dd-btn primary" disabled>提交验证</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* DataDome 挑战流程行为剧本（复刻 radwell 研究的挑战时序与音频验证码交互链）：
+ * 加载 -> 无感验证（1.2s 状态流转）-> 人工验证（音频验证码区）-> 用户点击/输入/提交
+ * 阶段经 __fpBehavior.mark 记录；用户行为由平台基础层自动采集。
+ */
+(function () {
+  'use strict';
+  var fb = window.__fpBehavior;
+  var statusEl = document.getElementById('dd-status');
+  var captchaZone = document.getElementById('dd-captcha-zone');
+  var audioBtn = document.getElementById('dd-audio-btn');
+  var inputZone = document.getElementById('dd-input-zone');
+  var codeInput = document.getElementById('dd-code-input');
+  var submitBtn = document.getElementById('dd-submit-btn');
+
+  function setStatus(text, done) {
+    statusEl.innerHTML = done
+      ? text
+      : '<span class="dd-spinner"></span>' + text;
+    statusEl.className = 'dd-status' + (done ? ' done' : '');
+  }
+
+  if (!fb) { setStatus('采集基础层未加载', true); return; }
+  fb.mark('page-load');
+
+  // 阶段 1：挑战脚本加载时序（800ms）
+  setTimeout(function () {
+    fb.mark('challenge-boot');
+    setStatus('正在加载验证脚本...');
+  }, 800);
+
+  // 阶段 2：无感验证（1200ms 状态流转后进入人工验证——复刻被风控拦截后的挑战路径）
+  setTimeout(function () {
+    fb.mark('silent-check-fail');
+    setStatus('需要人工验证');
+    captchaZone.classList.remove('dd-hidden');
+  }, 2000);
+
+  // 阶段 3：音频验证码交互链（用户驱动）
+  audioBtn.addEventListener('click', function () {
+    fb.mark('audio-request');
+    audioBtn.disabled = true;
+    audioBtn.textContent = '音频加载中...';
+    setTimeout(function () {
+      fb.mark('audio-ready');
+      audioBtn.textContent = '重新获取音频';
+      audioBtn.disabled = false;
+      inputZone.classList.remove('dd-hidden');
+      codeInput.focus();
+      setStatus('请输入听到的 6 位数字');
+    }, 1500);
+  });
+
+  codeInput.addEventListener('input', function () {
+    var v = codeInput.value.replace(/[^0-9]/g, '');
+    codeInput.value = v;
+    if (v.length === 6) {
+      fb.mark('code-entered');
+      submitBtn.disabled = false;
+    } else {
+      submitBtn.disabled = true;
+    }
+  });
+
+  submitBtn.addEventListener('click', function () {
+    fb.mark('captcha-submit');
+    setStatus('验证完成', true);
+    submitBtn.disabled = true;
+    codeInput.disabled = true;
+    fb.submit();
+  });
+})();
+</script>
+</body>
+</html>

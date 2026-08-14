@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>瑞数 6 挑战复刻 - electricity</title>
+<style>
+  /* 复刻瑞数 6 挑战链交互语义（不复制原站版权内容）：
+   * 412 挑战页（极简空壳 + 加载指示）-> 动态脚本初始化 -> 挑战计算 ->
+   * 凭证生成 -> 自动跳转业务页形态。
+   */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", "PingFang SC", system-ui, sans-serif;
+    background: #f4f5f7;
+    color: #24292f;
+  }
+
+  /* 挑战页：极简空壳语义 */
+  #challenge-stage {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+  }
+  .rs-box { text-align: center; max-width: 320px; }
+  .rs-spinner {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d0d7de;
+    border-top-color: #1a7f37;
+    border-radius: 50%;
+    animation: rs-spin 900ms linear infinite;
+    margin-bottom: 14px;
+  }
+  @keyframes rs-spin { to { transform: rotate(360deg); } }
+  .rs-status { font-size: 14px; color: #57606a; line-height: 1.6; }
+  .rs-log { font-size: 11px; color: #a0a6ad; margin-top: 12px; font-family: ui-monospace, Consolas, monospace; }
+
+  /* 业务页形态：常规页面语义（搜索区 + 内容列表占位） */
+  #business-stage { display: none; }
+  .biz-header {
+    background: #ffffff;
+    border-bottom: 1px solid #d0d7de;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .biz-logo { font-weight: 600; font-size: 16px; color: #1a7f37; }
+  .biz-search {
+    flex: 1;
+    max-width: 480px;
+    padding: 9px 14px;
+    border-radius: 20px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .biz-search:focus { border-color: #1a7f37; box-shadow: 0 0 0 3px rgba(26, 127, 55, 0.12); }
+  .biz-nav {
+    display: flex;
+    gap: 18px;
+    font-size: 13px;
+    color: #57606a;
+  }
+  .biz-nav span { cursor: pointer; }
+  .biz-nav span:hover { color: #1a7f37; }
+  .biz-main { max-width: 960px; margin: 0 auto; padding: 22px; }
+  .biz-title { font-size: 18px; font-weight: 600; margin: 6px 0 16px; }
+  .biz-list { display: flex; flex-direction: column; gap: 10px; }
+  .biz-item {
+    background: #ffffff;
+    border: 1px solid #d8dee4;
+    border-radius: 10px;
+    padding: 15px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 150ms ease, transform 120ms ease;
+  }
+  .biz-item:hover { border-color: #1a7f37; }
+  .biz-item:active { transform: scale(0.99); }
+  .biz-item .t { font-size: 14px; font-weight: 500; }
+  .biz-item .d { font-size: 12px; color: #a0a6ad; margin-top: 3px; }
+  .biz-badge {
+    font-size: 12px;
+    color: #1a7f37;
+    background: rgba(26, 127, 55, 0.08);
+    border-radius: 999px;
+    padding: 3px 12px;
+  }
+  .rs-hidden { display: none !important; }
+</style>
+<script src="behavior-core.js"></script>
+<script src="challenge-bridge.js"></script>
+</head>
+<body>
+<!-- 阶段 A：412 挑战页（极简空壳） -->
+<div id="challenge-stage">
+  <div class="rs-box">
+    <div class="rs-spinner"></div>
+    <div class="rs-status" id="rs-status">正在加载安全组件...</div>
+    <div class="rs-log" id="rs-log"></div>
+  </div>
+</div>
+
+<!-- 阶段 B：业务页形态（挑战通过后出现） -->
+<div id="business-stage">
+  <div class="biz-header">
+    <span class="biz-logo">电力服务</span>
+    <input id="biz-search" class="biz-search" placeholder="搜索服务或资讯..." autocomplete="off">
+    <div class="biz-nav">
+      <span>首页</span>
+      <span>服务大厅</span>
+      <span>公告</span>
+      <span>我的</span>
+    </div>
+  </div>
+  <div class="biz-main">
+    <p class="biz-title">热门服务</p>
+    <div class="biz-list" id="biz-list">
+      <div class="biz-item"><div><div class="t">电费查询</div><div class="d">实时电费余额与账单明细查询</div></div><span class="biz-badge">在线办理</span></div>
+      <div class="biz-item"><div><div class="t">用电报装</div><div class="d">新装 / 增容业务申请</div></div><span class="biz-badge">在线办理</span></div>
+      <div class="biz-item"><div><div class="t">故障报修</div><div class="d">停电故障一键报修</div></div><span class="biz-badge">在线办理</span></div>
+      <div class="biz-item"><div><div class="t">发票服务</div><div class="d">电子发票开具与下载</div></div><span class="biz-badge">预约</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 瑞数 6 挑战链行为剧本（复刻 412 挑战页时序语义）：
+ * 挑战页加载 -> 动态脚本初始化 -> 挑战计算 -> 凭证生成 -> 自动跳转业务页。
+ * 各阶段时长带随机抖动（模拟 VM 计算时长差异）；挑战通过后用户在业务页形态上
+ * 继续交互（搜索/点击），行为采集持续。阶段经 __fpBehavior.mark 记录。
+ */
+(function () {
+  'use strict';
+  var fb = window.__fpBehavior;
+  if (!fb) { return; }
+
+  var statusEl = document.getElementById('rs-status');
+  var logEl = document.getElementById('rs-log');
+  var challengeStage = document.getElementById('challenge-stage');
+  var businessStage = document.getElementById('business-stage');
+  var bizSearch = document.getElementById('biz-search');
+  var logLines = [];
+
+  fb.mark('page-load');
+
+  function setStatus(text) { statusEl.textContent = text; }
+  function log(text) {
+    logLines.push(text);
+    logEl.textContent = logLines.join('\n');
+  }
+  function jitter(base, spread) {
+    return base + Math.floor(Math.random() * spread);
+  }
+
+  // 阶段 1：挑战页加载（空壳 + 加载指示）
+  log('GET / 412 challenge page');
+
+  // 阶段 2：动态脚本初始化（模拟内联 script 与外部 JS 注入时序）
+  setTimeout(function () {
+    fb.mark('challenge-boot');
+    setStatus('正在初始化安全组件...');
+    log('inline script: env init');
+  }, jitter(600, 500));
+
+  setTimeout(function () {
+    fb.mark('ts-init');
+    setStatus('正在加载校验脚本...');
+    log('external js: loaded');
+  }, jitter(1400, 600));
+
+  // 阶段 3：挑战计算（模拟 VM 执行与浏览器环境校验）
+  setTimeout(function () {
+    fb.mark('vm-exec');
+    setStatus('正在校验浏览器环境...');
+    log('vm: env-check running');
+  }, jitter(2400, 800));
+
+  // 阶段 4：凭证生成与跳转（挑战通过 -> 业务页形态）
+  setTimeout(function () {
+    fb.mark('cookie-set');
+    setStatus('验证通过，正在进入...');
+    log('set-cookie: dynamic token');
+  }, jitter(3800, 800));
+
+  setTimeout(function () {
+    fb.mark('page-transition');
+    challengeStage.classList.add('rs-hidden');
+    businessStage.style.display = 'block';
+    window.scrollTo(0, 0);
+  }, jitter(4800, 800));
+
+  // 阶段 5：业务页交互（用户驱动，采集持续）
+  bizSearch.addEventListener('focus', function () {
+    fb.mark('biz-search-focus');
+  });
+  bizSearch.addEventListener('input', function () {
+    fb.mark('biz-search-input');
+  });
+  var bizItems = document.querySelectorAll('.biz-item');
+  Array.prototype.forEach.call(bizItems, function (item) {
+    item.addEventListener('click', function () {
+      fb.mark('biz-item-click');
+      item.style.borderColor = '#1a7f37';
+      setTimeout(function () { item.style.borderColor = ''; }, 600);
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Imperva-canadiannorth.com 指纹采集插件",
+  "version": "1.0",
+  "description": "Imperva Incapsula challenge 求值面：incap cookie 键名形状 / script src 结构 / 时钟精度 / XHR fetch 完整性 /",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Imperva-canadiannorth.com"
+  },
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fp-imperva-canadiannorth.com@fingerprint-share.local"
+    }
+  }
+}

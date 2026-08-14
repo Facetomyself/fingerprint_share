@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Imperva-canadiannorth.com</title>
+<style>
+  body {{ margin: 0; width: 340px; font-family: -apple-system, "Segoe UI", "PingFang SC", sans-serif;
+    background: #0b0b12; color: #e8e8ec; font-size: 13px; }}
+  .hd {{ padding: 16px 18px 12px; background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.08); }}
+  .hd h1 {{ margin: 0; font-size: 16px; letter-spacing: -0.01em; }}
+  .hd p {{ margin: 4px 0 0; font-size: 11.5px; color: #8f8f9c; }}
+  .bd {{ padding: 12px 18px 16px; }}
+  .bd h2 {{ font-size: 12px; color: #8f8f9c; text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 6px; }}
+  .bd p {{ margin: 4px 0; line-height: 1.55; color: #b8b8c6; }}
+  .bd ul {{ margin: 4px 0; padding-left: 18px; color: #b8b8c6; line-height: 1.6; }}
+  button {{ display: block; width: 100%; margin: 8px 0; padding: 9px 14px; border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.07); color: #fff;
+    font-size: 13px; cursor: pointer; text-align: left; }}
+  button:hover {{ background: rgba(255,255,255,0.12); }}
+  button.primary {{ background: rgba(10,132,255,0.85); border-color: rgba(10,132,255,0.6); }}
+  .badge {{ display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 11px;
+    background: rgba(48,209,88,0.15); color: #4cd964; border: 1px solid rgba(48,209,88,0.3); margin-left: 6px; }}
+</style>
+</head>
+<body>
+<div class="hd">
+  <h1>Imperva-canadiannorth.com<span class="badge">仅环境面</span></h1>
+  <p>Imperva · canadiannorth.com</p>
+</div>
+<div class="bd">
+  <h2>采集了什么</h2>
+  <p>Imperva Incapsula challenge 求值面：incap cookie 键名形状 / script src 结构 / 时钟精度 / XHR fetch 完整性 / 音频渲染耗时。来源 workspace/canadiannorth-imperva-v1。</p>
+  <h2>怎么使用</h2>
+  <ul>
+    <li>点击下方「打开环境采集页」执行环境指纹采集（自动上报平台）。</li>
+    
+    <li>采集结果在平台指纹页浏览与下载（平台地址见插件 README）。</li>
+  </ul>
+  <h2>注意事项</h2>
+  <p>注意事项：
+1. 本插件页面将采集浏览器环境/行为指纹并存储与共享，仅用于风控研究对照，
+   请勿在隐私敏感环境使用。
+2. 采集数据在平台内公开共享；带出平台时按 restricted-local 纪律执行：
+   环境数据只允许脱敏摘要；行为轨迹与击键间隔原值一律不得输出。
+3. 采集脚本仅管理员本人编写维护，请勿引入第三方来源代码。</p>
+  <button class="primary" id="btn-collect">打开环境采集页</button>
+  
+  <button id="btn-readme">打开 README（使用说明）</button>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

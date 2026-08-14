@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "通用-deep-fingerprint-v3 指纹采集插件",
+  "version": "1.0",
+  "description": "深度浏览器指纹基线 v3：environment 快照 32 组 + deepProbes 谎言检测三层（queryLies 10 接口 ~20 项检查 / prototypeLi",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "通用-deep-fingerprint-v3"
+  },
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fp-generic-deep-v3@fingerprint-share.local"
+    }
+  }
+}

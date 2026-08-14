@@ -20,12 +20,19 @@ Web 环境指纹采集与共享平台。访问采集 URL 时在访问者浏览�
 ```
 fp_share_app/    FastAPI 应用（config/application/infrastructure/web）
 static/          无构建前端（导航/条目/指纹浏览/后台/登录）
-collect_js/      采集脚本种子（后台编辑后以 DB 为准）
-scripts/         init_db.py（建表+种子）/ hash_password.py（密码 hash）
+collect_js/      采集脚本种子（本地承载，不进 Git；后台编辑后以 DB 为准）
+page_modules/    行为剧本页面模块（本地承载，不进 Git）
+plugins/         每个风控一个完整浏览器插件（WebExtension MV3）：
+                 manifest + popup 展示页（采集了什么/怎么使用/注意事项）
+                 + 环境采集页（内联采集脚本）+ 行为剧本页 + README
+scripts/         init_db.py / hash_password.py / rebuild_db.py / build_plugins.py
 data/            SQLite 数据库（含采集记录，restricted-local，不进 Git）
-docs/            collect-js-contract.md / data-sensitivity.md
+docs/            collect-js-contract.md / page-module-contract.md / data-sensitivity.md
 tests/           单元测试（pytest）
 ```
+
+插件由 `scripts/build_plugins.py` 从 collect_js/、page_modules/ 与条目元数据生成；
+修改采集脚本或剧本页后重跑生成器同步插件。
 
 ## 启动
 
