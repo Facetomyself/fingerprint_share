@@ -57,7 +57,25 @@ def connect(db_path: str | Path) -> sqlite3.Connection:
     return conn
 
 
+# 历史 schema 演进迁移（幂等；新库走 SCHEMA，旧库按此补齐缺列）
+MIGRATIONS = [
+    ("entries", "tags", "TEXT NOT NULL DEFAULT '[]'"),
+]
+
+
 def init_db(conn: sqlite3.Connection) -> None:
-    """幂等建表。"""
+    """幂等建表 + 缺列自动迁移（旧库升级不再需要手工 ALTER）。"""
     conn.executescript(SCHEMA)
+    migrate_schema(conn)
     conn.commit()
+
+
+def migrate_schema(conn: sqlite3.Connection) -> None:
+    """为已存在的表补齐历史新增列。"""
+    for table, column, ddl in MIGRATIONS:
+        try:
+            cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
+        except sqlite3.OperationalError:
+            continue
+        if column not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
