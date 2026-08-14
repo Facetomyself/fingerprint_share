@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>瑞数6-electricity-ruishu-web-v2 - 指纹共享平台</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+    <a href="/admin/">后台</a>
+  </div>
+</header>
+<main class="container">
+  <div class="hero">
+    <h1>瑞数6-electricity-ruishu-web-v2</h1>
+    <p class="hero-sub">瑞数6 风控 · electricity-ruishu-web-v2 · 完整功能插件（采集脚本与展示页面一体化）</p>
+  </div>
+
+  <div class="section">
+    <h2>采集了什么</h2>
+    <p>瑞数 6 挑战页专有环境面：$_ts 全局形状 / script 结构 / meta 与 URL 参数名结构 / cookie 键名形状 / DOM gate 原型链。来源 workspace/electricity-ruishu-web-v2。</p>
+    <p style="margin-top:10px;">
+      <span class="badge badge-ok">环境指纹</span>
+       <span class="badge badge-ok">行为指纹（行为剧本页）</span>
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>怎么使用</h2>
+    <ul>
+      <li>打开<a href="/collect/ruishu-rs6-electricity">环境采集页</a>：执行环境指纹采集，自动上报平台。</li>
+            <li>打开<a href="/collect/__SLUG__/behavior">行为剧本页</a>：在复刻原网站行为逻辑的页面上按真实交互方式操作，剧本阶段自动记录。</li>
+      <li>在<a href="/e/ruishu-rs6-electricity/fingerprints">指纹页</a>浏览与下载采集结果（支持 UA 大类/小类、OS、时区等分面筛选）。</li>
+      <li>采集脚本源码见本插件目录 <code>collect.js</code>（集成在本插件中，可审计可复用）。</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>注意事项</h2>
+    <p>1. 采集页面将采集你的浏览器环境/行为指纹并存储与共享，仅用于风控研究对照，
+   请勿在隐私敏感环境使用。
+2. 采集数据在平台内公开共享；带出平台时按 restricted-local 纪律执行：
+   环境数据只允许脱敏摘要（组件名/哈希/维度计数）；行为轨迹与击键间隔原值
+   一律不得输出，只允许信号判定摘要与统计值。
+3. 采集脚本仅管理员本人编写维护，请勿引入第三方来源代码。</p>
+  </div>
+
+  <div class="actions">
+    <a class="btn btn-primary" href="/collect/ruishu-rs6-electricity">打开环境采集页</a>
+        <a class="btn btn-primary" href="/collect/__SLUG__/behavior">打开行为剧本页</a>
+
+    <a class="btn" href="/e/ruishu-rs6-electricity/fingerprints">浏览指纹数据</a>
+    <a class="btn" href="/">返回导航</a>
+  </div>
+</main>
+</body>
+</html>

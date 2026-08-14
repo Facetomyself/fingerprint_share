@@ -17,7 +17,7 @@ SEED_ENTRIES = [
                        "（timer precision/RFP/Brave/Tor/扩展哈希）。行为指纹走独立行为采集页。"
                        "机制参考 CreepJS (MIT)，自写实现。",
         "version": "v3",
-        "js_file": "collect_js/generic-deep-v3.js",
+        "js_file": "modules/generic-deep-v3/collect.js",
         "has_behavior": 1,
     },
     {
@@ -27,9 +27,9 @@ SEED_ENTRIES = [
                        "cid 形状生成 / request envelope 输入面 / defineProperty 可覆写性 / storage dd 键名。"
                        "来源 workspace/radwell（jspl 九字段 envelope 研究）。",
         "version": "v1",
-        "js_file": "collect_js/datadome-5.9.0-radwell.js",
+        "js_file": "modules/datadome-radwell.com/collect.js",
         "has_behavior": 1,
-        "page_module_file": "page_modules/datadome-challenge-radwell.html",
+        "page_module_file": "modules/datadome-radwell.com/challenge.html",
     },
     {
         "slug": "ruishu-rs6-electricity",
@@ -37,9 +37,9 @@ SEED_ENTRIES = [
         "description": "瑞数 6 挑战页专有环境面：$_ts 全局形状 / script 结构 / meta 与 URL 参数名结构 / "
                        "cookie 键名形状 / DOM gate 原型链。来源 workspace/electricity-ruishu-web-v2。",
         "version": "v1",
-        "js_file": "collect_js/ruishu-rs6-challenge-electricity.js",
+        "js_file": "modules/ruishu-rs6-electricity/collect.js",
         "has_behavior": 1,
-        "page_module_file": "page_modules/ruishu-rs6-challenge-electricity.html",
+        "page_module_file": "modules/ruishu-rs6-electricity/challenge.html",
     },
     {
         "slug": "feilin-51job",
@@ -47,7 +47,7 @@ SEED_ENTRIES = [
         "description": "飞林 FeiLin v1.4.2 反调试完整性面：toString 深度 / document.all 行为 / 扩展脚本检测 / "
                        "回调完整性 / 插件一致性 / 飞林 SDK 全局。来源 workspace/51job-web-reverse。",
         "version": "v1",
-        "js_file": "collect_js/feilin-device-fingerprint-51job.js",
+        "js_file": "modules/feilin-51job/collect.js",
         "has_behavior": 0,
     },
     {
@@ -56,7 +56,7 @@ SEED_ENTRIES = [
         "description": "Imperva Incapsula challenge 求值面：incap cookie 键名形状 / script src 结构 / "
                        "时钟精度 / XHR fetch 完整性 / 音频渲染耗时。来源 workspace/canadiannorth-imperva-v1。",
         "version": "v1",
-        "js_file": "collect_js/imperva-reese84-canadiannorth.js",
+        "js_file": "modules/imperva-canadiannorth.com/collect.js",
         "has_behavior": 0,
     },
     {
@@ -65,9 +65,9 @@ SEED_ENTRIES = [
         "description": "BOSS 直聘 security-js 设备指纹面：WebGL readPixels 行为 / 设备指纹字段组合 / "
                        "console 序列化侧信道 / 输入事件面 / 资源域名分组。来源 workspace/boss。",
         "version": "v1",
-        "js_file": "collect_js/zhipin-security-js-boss.js",
+        "js_file": "modules/boss-zhipin.com/collect.js",
         "has_behavior": 1,
-        "page_module_file": "page_modules/boss-login-zhipin.html",
+        "page_module_file": "modules/boss-zhipin.com/challenge.html",
     },
 ]
 

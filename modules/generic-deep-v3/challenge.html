@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行为采集 - 通用-deep-fingerprint-v3</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+  </div>
+</header>
+<main class="container">
+  <div class="hero">
+    <h1>通用-deep-fingerprint-v3 · 行为采集</h1>
+    <p class="hero-sub">请模拟真实交互：移动鼠标、滚动页面、在输入框中打字。30 秒后自动上报。</p>
+  </div>
+  <div class="banner">
+    此页面将采集你的浏览器行为指纹（鼠标移动轨迹、键盘输入节奏、滚动模式）并存储与共享。
+    仅用于风控研究对照，请勿在隐私敏感环境打开。
+  </div>
+  <div class="section">
+    <input type="text" id="bh-input-demo" placeholder="在这里打一段文字（示例）" style="max-width:420px;">
+    <div class="actions" style="margin-top:12px;">
+      <button id="bh-submit" disabled>结束并提交</button>
+    </div>
+    <p class="muted"><span id="bh-count">已记录 0 个事件</span> · <span id="bh-timer">等待首次交互...</span></p>
+    <div id="bh-status" class="status">等待交互...</div>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/e/generic-deep-v3">插件展示页</a>
+    <a class="btn" href="/">返回导航</a>
+  </div>
+</main>
+<script src="/static/js/behavior-core.js"></script>
+<script src="/static/js/behavior.js"></script>
+<script>
+(function () {
+  'use strict';
+  var pathMatch = location.pathname.match(/^\/collect\/([^/]+)\/behavior/);
+  var slug = pathMatch ? decodeURIComponent(pathMatch[1]) : 'generic-deep-v3';
+  var slugEl = document.getElementById('bh-slug');
+  window.__FP_ENTRY_SLUG = slug;
+})();
+</script>
+</body>
+</html>

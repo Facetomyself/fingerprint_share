@@ -39,5 +39,6 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "static")), name="static")
+app.mount("/modules", StaticFiles(directory=str(PROJECT_ROOT / "modules")), name="modules")
 app.include_router(public_router)
 app.include_router(admin_router)

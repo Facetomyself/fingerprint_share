@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BOSS 登录复刻 - zhipin.com</title>
+<style>
+  /* 复刻 BOSS 直聘登录页交互语义（不复制原站版权内容）：浅色卡片 + 品牌绿 #00BE6E */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, "SF Pro Text", "Segoe UI", "PingFang SC", system-ui, sans-serif;
+    background: linear-gradient(160deg, #eef6f2 0%, #dcefe6 100%);
+    color: #1f2d2a;
+  }
+  #login-card {
+    width: 100%;
+    max-width: 400px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px 34px;
+    box-shadow: 0 20px 48px rgba(20, 60, 45, 0.14);
+  }
+  .bz-title { font-size: 20px; font-weight: 600; margin: 0 0 4px; color: #123a2a; }
+  .bz-sub { font-size: 12.5px; color: #8aa39a; margin: 0 0 22px; }
+  .bz-label { font-size: 13px; color: #4a645c; margin: 14px 0 6px; }
+  .bz-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #d5e3dd;
+    background: #f7faf8;
+    font-size: 15px;
+    color: #1f2d2a;
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .bz-input:focus { border-color: #00be6e; box-shadow: 0 0 0 3px rgba(0, 190, 110, 0.14); }
+  .bz-btn {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 10px;
+    border: none;
+    background: #00be6e;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 18px;
+    transition: background-color 150ms ease, transform 120ms ease;
+  }
+  .bz-btn:hover { background: #00a860; }
+  .bz-btn:active { transform: scale(0.98); }
+  .bz-btn:disabled { background: #b9d8ca; cursor: not-allowed; }
+  .bz-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: #6a827a;
+    cursor: pointer;
+  }
+  .bz-check input { width: 15px; height: 15px; accent-color: #00be6e; }
+  .bz-countdown { font-size: 12px; color: #00a860; margin-top: 6px; }
+
+  /* 滑块验证弹层 */
+  #slider-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 30, 24, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  #slider-box {
+    width: 340px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 26px;
+  }
+  #slider-box h3 { font-size: 15px; margin: 0 0 4px; color: #123a2a; }
+  #slider-hint { font-size: 12.5px; color: #8aa39a; margin: 0 0 16px; }
+  #slider-track {
+    position: relative;
+    height: 44px;
+    border-radius: 22px;
+    background: #e8f2ed;
+    border: 1px solid #d5e3dd;
+    overflow: hidden;
+    user-select: none;
+  }
+  #slider-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: rgba(0, 190, 110, 0.18);
+  }
+  #slider-gap {
+    position: absolute;
+    top: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #fff;
+    border: 2px dashed #00be6e;
+    opacity: 0.75;
+  }
+  #slider-knob {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    background: #fff;
+    border: 1px solid #00be6e;
+    box-shadow: 0 2px 8px rgba(0, 190, 110, 0.25);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #00be6e;
+  }
+  .bz-hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="login-card">
+  <p class="bz-title">登录</p>
+  <p class="bz-sub">BOSS 登录链复刻 · zhipin.com</p>
+
+  <p class="bz-label">手机号</p>
+  <input id="boss-phone" class="bz-input" maxlength="11" inputmode="numeric"
+         placeholder="请输入 11 位手机号" autocomplete="off">
+
+  <label class="bz-check">
+    <input type="checkbox" id="boss-agree"> 已阅读并同意用户协议与隐私政策
+  </label>
+
+  <button id="boss-login-btn" class="bz-btn" disabled>登录</button>
+
+  <div id="boss-code-zone" class="bz-hidden">
+    <p class="bz-label">短信验证码</p>
+    <input id="boss-code-input" class="bz-input" maxlength="6" inputmode="numeric"
+           placeholder="请输入 6 位验证码" autocomplete="off">
+    <p class="bz-countdown" id="boss-countdown"></p>
+    <button id="boss-final-btn" class="bz-btn" disabled>确认登录</button>
+  </div>
+</div>
+
+<div id="slider-overlay" class="bz-hidden">
+  <div id="slider-box">
+    <h3>请完成安全验证</h3>
+    <p id="slider-hint">按住滑块，拖动到缺口位置完成拼图</p>
+    <div id="slider-track">
+      <div id="slider-fill"></div>
+      <div id="slider-gap"></div>
+      <div id="slider-knob">›</div>
+    </div>
+  </div>
+</div>
+<script>
+/* BOSS 登录链行为剧本（复刻 security-js 验证链的交互语义）：
+ * 输入手机号 -> 勾选协议 -> 登录 -> 滑块验证（拖动到随机缺口）-> 验证码输入 -> 确认
+ * 滑块拖动是核心行为采集面（轨迹与轨道绑定）；阶段经 __fpBehavior.mark 记录。
+ */
+(function () {
+  'use strict';
+  var fb = window.__fpBehavior;
+  if (!fb) { return; }
+
+  var phoneInput = document.getElementById('boss-phone');
+  var agreeBox = document.getElementById('boss-agree');
+  var loginBtn = document.getElementById('boss-login-btn');
+  var codeZone = document.getElementById('boss-code-zone');
+  var codeInput = document.getElementById('boss-code-input');
+  var countdownEl = document.getElementById('boss-countdown');
+  var finalBtn = document.getElementById('boss-final-btn');
+  var overlay = document.getElementById('slider-overlay');
+  var track = document.getElementById('slider-track');
+  var knob = document.getElementById('slider-knob');
+  var gap = document.getElementById('slider-gap');
+  var fill = document.getElementById('slider-fill');
+  var sliderHint = document.getElementById('slider-hint');
+
+  fb.mark('page-load');
+
+  function updateLoginState() {
+    var phoneOk = /^1\d{10}$/.test(phoneInput.value);
+    loginBtn.disabled = !(phoneOk && agreeBox.checked);
+  }
+  phoneInput.addEventListener('input', function () {
+    phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '');
+    updateLoginState();
+  });
+  agreeBox.addEventListener('change', updateLoginState);
+
+  // 随机缺口位置（24px 到 轨道宽-56px）
+  var gapLeft = 0;
+  var dragState = null;
+
+  function setupSlider() {
+    var trackWidth = track.clientWidth;
+    gapLeft = 24 + Math.floor(Math.random() * (trackWidth - 80));
+    gap.style.left = gapLeft + 'px';
+    knob.style.left = '0px';
+    fill.style.width = '0px';
+    sliderHint.textContent = '按住滑块，拖动到缺口位置完成拼图';
+    dragState = null;
+  }
+
+  loginBtn.addEventListener('click', function () {
+    fb.mark('login-click');
+    overlay.classList.remove('bz-hidden');
+    // 弹层显示后（下一帧布局完成）再计算缺口位置，避免 clientWidth 为 0
+    requestAnimationFrame(function () {
+      setupSlider();
+    });
+  });
+
+  knob.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    dragState = { startX: e.clientX, startLeft: 0, dragging: false };
+    knob.setPointerCapture(e.pointerId);
+    fb.mark('slider-drag-start');
+  });
+
+  knob.addEventListener('pointermove', function (e) {
+    if (!dragState) { return; }
+    var dx = e.clientX - dragState.startX;
+    if (!dragState.dragging && Math.abs(dx) > 6) {
+      dragState.dragging = true;
+      fb.mark('slider-dragging');
+    }
+    var maxLeft = track.clientWidth - knob.offsetWidth;
+    var left = Math.max(0, Math.min(maxLeft, dragState.startLeft + dx));
+    knob.style.left = left + 'px';
+    fill.style.width = left + 'px';
+  });
+
+  knob.addEventListener('pointerup', function (e) {
+    if (!dragState) { return; }
+    var dragging = dragState.dragging;
+    var left = parseInt(knob.style.left || '0', 10);
+    dragState = null;
+    var hit = dragging && Math.abs(left - gapLeft) <= 8;
+    if (hit) {
+      fb.mark('slider-verified');
+      sliderHint.textContent = '验证通过';
+      setTimeout(function () {
+        overlay.classList.add('bz-hidden');
+        codeZone.classList.remove('bz-hidden');
+        codeInput.focus();
+        fb.mark('code-sent');
+        startCountdown();
+      }, 500);
+    } else {
+      fb.mark('slider-fail');
+      sliderHint.textContent = '验证未通过，请重试';
+      knob.style.left = '0px';
+      fill.style.width = '0px';
+    }
+  });
+
+  var countdownTimer = null;
+  function startCountdown() {
+    var remain = 60;
+    countdownTimer = setInterval(function () {
+      countdownEl.textContent = '验证码已发送，' + remain + 's 后可重新获取';
+      remain -= 1;
+      if (remain < 0) { clearInterval(countdownTimer); }
+    }, 1000);
+  }
+
+  codeInput.addEventListener('input', function () {
+    var v = codeInput.value.replace(/[^0-9]/g, '');
+    codeInput.value = v;
+    if (v.length === 6) {
+      fb.mark('code-entered');
+      finalBtn.disabled = false;
+    } else {
+      finalBtn.disabled = true;
+    }
+  });
+
+  finalBtn.addEventListener('click', function () {
+    fb.mark('login-submit');
+    finalBtn.disabled = true;
+    if (countdownTimer) { clearInterval(countdownTimer); }
+    fb.submit();
+  });
+})();
+</script>
+</body>
+</html>

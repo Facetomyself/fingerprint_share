@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>环境指纹采集 - 瑞数6-electricity-ruishu-web-v2</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+  </div>
+</header>
+<main class="container">
+  <div class="hero">
+    <h1>瑞数6-electricity-ruishu-web-v2</h1>
+    <p class="hero-sub">环境指纹采集 · 采集脚本 <code>collect.js</code> 集成在本插件中 · 自动运行并上报</p>
+  </div>
+  <div class="banner">
+    此页面将采集你的浏览器环境指纹并存储与共享。仅用于风控研究对照，请勿在隐私敏感环境打开。
+  </div>
+  <div class="section">
+    <div id="fp-status" class="status">正在采集环境指纹...</div>
+    <p class="muted">采集包含环境快照与深度探测（谎言检测/反指纹模式识别），通常几秒内完成。</p>
+  </div>
+  <div class="actions" style="margin-top:14px;">
+    <a class="btn" href="/e/ruishu-rs6-electricity">插件展示页</a>
+    <a class="btn" href="/e/ruishu-rs6-electricity/fingerprints">浏览指纹数据</a>
+    <a class="btn" href="/">返回导航</a>
+  </div>
+</main>
+<script src="/static/js/collector.js"></script>
+<script src="/modules/ruishu-rs6-electricity/collect.js"></script>
+</body>
+</html>

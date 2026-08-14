@@ -34,6 +34,10 @@ def page_index():
 
 @router.get("/e/{slug}")
 def page_entry(slug: str):
+    """条目页：模块包 info.html 优先（插件展示页），无则旧通用条目页。"""
+    module_info = PROJECT_ROOT / "modules" / slug / "info.html"
+    if module_info.is_file():
+        return FileResponse(module_info)
     return FileResponse(STATIC_DIR / "entry.html")
 
 
@@ -58,22 +62,30 @@ def page_login():
 
 @router.get("/collect/{slug}")
 def page_collect(slug: str, conn: sqlite3.Connection = Depends(get_db)):
+    """环境采集页：模块包 collect.html 优先（脚本集成在插件中），无则旧 DB 渲染。"""
     entry = entries_uc.get_entry(conn, slug, with_js=True)
     if entry is None:
         raise HTTPException(status_code=404, detail="条目不存在")
+    module_collect = PROJECT_ROOT / "modules" / slug / "collect.html"
+    if module_collect.is_file():
+        return FileResponse(module_collect)
     return render_collect_page(entry["name"], entry["slug"], entry["collect_js"])
 
 
 @router.get("/collect/{slug}/behavior")
 def page_collect_behavior(slug: str, conn: sqlite3.Connection = Depends(get_db)):
+    """行为剧本页：模块包 challenge.html 优先，无则旧 DB page_module/演示页。"""
     entry = entries_uc.get_entry(conn, slug, with_js=False, with_module=True)
     if entry is None:
         raise HTTPException(status_code=404, detail="条目不存在")
     if not entry.get("has_behavior"):
         raise HTTPException(status_code=404, detail="该风控无行为指纹面（无证据依据），不提供行为采集页")
+    module_challenge = PROJECT_ROOT / "modules" / slug / "challenge.html"
+    if module_challenge.is_file():
+        return FileResponse(module_challenge)
     module = (entry.get("page_module") or "").strip()
     if module:
-        # 条目级复刻页面模块（行为剧本页）：渲染模块并注入平台行为采集基础层
+        # 旧条目级复刻页面模块（DB 承载）：渲染并注入平台行为采集基础层
         return render_page_module(entry["name"], entry["slug"], module)
     return FileResponse(STATIC_DIR / "behavior.html")
 
