@@ -9,7 +9,7 @@ Web 环境指纹采集与共享平台。访问采集 URL 时在访问者浏览�
 | 面 | 内容 | 权限 |
 |---|---|---|
 | 公开导航 | 按「风控类型-网站」分组浏览条目（如 `DataDome-radwell.com`、`瑞数6-xxx`） | 所有人 |
-| 条目页 | 查看说明、下载采集 JS 源码、进入指纹浏览 | 所有人 |
+| 条目页 | 查看说明、进入采集页与指纹浏览（脚本源码不提供下载） | 所有人 |
 | 环境采集页 | `/collect/<slug>` 执行深度模板：environment 快照 32 组 + deepProbes 谎言检测（queryLies 10 接口逐项检查 / prototypeLies 40+ 接口 / phantomIframe 对比 / 双画布稳定性 / plugins-mimeTypes 交叉验证）+ trash 乱码检测 + resistance（RFP/Brave/Tor） | 所有人 |
 | 行为采集页 | `/collect/<slug>/behavior` 提示模拟真实交互，采集鼠标/键盘/滚动事件流，12 项启发式信号判定 + 特征统计 + 降采样轨迹（600 点/30s） | 所有人 |
 | 指纹共享 | 浏览各条目采集记录（kind 筛选、分面详情、轨迹可视化、导出 JSON） | 所有人 |

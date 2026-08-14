@@ -13,15 +13,17 @@
     <a href="/">导航</a>
   </div>
 </header>
-<main class="container" style="max-width:420px;">
-  <h1>后台登录</h1>
-  <p class="muted">后台仅用于采集脚本的上传与管理。</p>
-  <div id="login-status" class="hidden"></div>
-  <form id="login-form">
-    <label for="password">管理员密码</label>
-    <input type="password" id="password" autocomplete="current-password" required>
-    <button type="submit">登录</button>
-  </form>
+<main class="login-shell">
+  <div class="section login-card">
+    <h1 style="margin-top:4px;">后台登录</h1>
+    <p class="muted">后台仅用于采集脚本的上传与管理。</p>
+    <div id="login-status" class="hidden"></div>
+    <form id="login-form">
+      <label for="password">管理员密码</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+      <button type="submit" class="btn-primary" style="width:100%;">登录</button>
+    </form>
+  </div>
 </main>
 <script src="/static/js/common.js"></script>
 <script>

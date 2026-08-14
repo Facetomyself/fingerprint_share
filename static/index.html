@@ -15,8 +15,11 @@
   </div>
 </header>
 <main class="container">
-  <h1>指纹共享平台</h1>
-  <p class="muted">按「风控类型-网站」分组的指纹采集条目。采集脚本与采集到的指纹数据均公开共享。</p>
+  <div class="hero">
+    <h1>指纹共享平台</h1>
+    <p class="hero-sub">按「风控类型-网站」分组的指纹采集条目。环境指纹与行为指纹分页采集，采集数据公开共享。</p>
+    <div class="hero-stats" id="hero-stats"></div>
+  </div>
   <div id="entries-root">
     <div class="status">正在加载条目...</div>
   </div>
@@ -42,18 +45,40 @@
           '<div class="desc">' + escapeHtml(e.description || '（无描述）') +
           ' <span class="muted">v' + escapeHtml(e.version) + '</span></div>' +
           '<div class="actions">' +
-          '<a href="/e/' + encodeURIComponent(e.slug) + '">详情</a>' +
-          '<a href="/collect/' + encodeURIComponent(e.slug) + '">环境采集页</a>' +
-          '<a href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>' +
-          '<a href="/dl/' + encodeURIComponent(e.slug) + '.js">下载脚本</a>' +
-          '<a href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹</a>' +
+          '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境采集页</a>' +
+          '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>' +
+          '<a class="btn" href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹</a>' +
+          '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '">详情</a>' +
           '</div></div>';
       });
     });
     root.innerHTML = html;
   }
 
-  fetchJson('/api/entries').then(renderEntries).catch(function (err) {
+  function renderHeroStats(entries) {
+    var statsEl = document.getElementById('hero-stats');
+    var promises = entries.map(function (e) {
+      return fetchJson('/api/collections?entry_id=' + e.id + '&page=1').then(function (d) {
+        return { name: e.name, total: d.total, slug: e.slug };
+      }).catch(function () {
+        return { name: e.name, total: 0, slug: e.slug };
+      });
+    });
+    Promise.all(promises).then(function (rows) {
+      var total = rows.reduce(function (acc, r) { return acc + r.total; }, 0);
+      var html = '<span class="stat-chip">条目 ' + entries.length + '</span>' +
+        '<span class="stat-chip">采集记录 ' + total + '</span>';
+      rows.forEach(function (r) {
+        html += '<span class="stat-chip">' + escapeHtml(r.name) + ' ' + r.total + '</span>';
+      });
+      statsEl.innerHTML = html;
+    });
+  }
+
+  fetchJson('/api/entries').then(function (entries) {
+    renderEntries(entries);
+    renderHeroStats(entries);
+  }).catch(function (err) {
     root.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
   });
 })();

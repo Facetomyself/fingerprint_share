@@ -15,22 +15,31 @@
   </div>
 </header>
 <main class="container">
-  <h1>指纹数据浏览</h1>
-  <p class="muted">平台内公开共享。带出平台（报告/仓库/外部）时按 restricted-local 纪律执行：
-    环境数据只允许脱敏摘要；行为轨迹与击键间隔原值一律不得输出。</p>
+  <div class="hero">
+    <h1>指纹数据</h1>
+    <p class="hero-sub">平台内公开共享。带出平台（报告/仓库/外部）时按 restricted-local 纪律执行：
+      环境数据只允许脱敏摘要；行为轨迹与击键间隔原值一律不得输出。</p>
+  </div>
 
   <div class="section">
-    <label for="entry-select">条目</label>
-    <select id="entry-select"><option value="">全部条目</option></select>
-    <label for="kind-select">类型</label>
-    <select id="kind-select">
-      <option value="">全部</option>
-      <option value="environment">环境指纹</option>
-      <option value="behavior">行为指纹</option>
-    </select>
-    <div class="actions" style="margin-top:10px;">
-      <button id="export-btn" class="secondary">导出当前筛选 JSON</button>
+    <div class="filter-row">
+      <div class="filter-item">
+        <label for="entry-select">条目</label>
+        <select id="entry-select"><option value="">全部条目</option></select>
+      </div>
+      <div class="filter-item">
+        <label for="kind-select">类型</label>
+        <select id="kind-select">
+          <option value="">全部</option>
+          <option value="environment">环境指纹</option>
+          <option value="behavior">行为指纹</option>
+        </select>
+      </div>
+      <div class="filter-item filter-action">
+        <button id="export-btn" class="secondary">导出当前筛选 JSON</button>
+      </div>
     </div>
+    <div class="overview-strip" id="overview-strip"></div>
   </div>
 
   <div id="list-root"><div class="status">正在加载...</div></div>
@@ -85,6 +94,7 @@
     var params = ['page=' + state.page];
     if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
     if (state.kind) { params.push('kind=' + state.kind); }
+    refreshOverview();
     return fetchJson('/api/collections?' + params.join('&')).then(function (data) {
       if (!data.items.length) {
         listRoot.innerHTML = '<div class="status">暂无采集记录。打开<a href="/collect/' +
@@ -461,6 +471,36 @@
     state.page = 1;
     detailRoot.innerHTML = '';
     loadPage();
+  }
+
+  function refreshOverview() {
+    var strip = document.getElementById('overview-strip');
+    var base = [];
+    if (state.entryId !== null) { base.push('entry_id=' + state.entryId); }
+    var queries = [];
+    var labels = [];
+    if (state.kind) {
+      queries.push(base.concat(['kind=' + state.kind]).join('&'));
+      labels.push(state.kind === 'environment' ? '环境指纹' : '行为指纹');
+    } else {
+      queries.push(base.concat(['kind=environment']).join('&'));
+      queries.push(base.concat(['kind=behavior']).join('&'));
+      labels.push('环境指纹');
+      labels.push('行为指纹');
+    }
+    Promise.all(queries.map(function (q) {
+      return fetchJson('/api/collections?' + q + '&page=1').then(function (d) {
+        return d.total;
+      }).catch(function () { return 0; });
+    })).then(function (totals) {
+      var sum = totals.reduce(function (a, b) { return a + b; }, 0);
+      var html = '';
+      labels.forEach(function (label, i) {
+        html += '<span class="stat-chip">' + escapeHtml(label) + ' <strong>' + totals[i] + '</strong></span>';
+      });
+      html += '<span class="stat-chip">合计 <strong>' + sum + '</strong></span>';
+      strip.innerHTML = html;
+    });
   }
 
   selectEl.addEventListener('change', refresh);

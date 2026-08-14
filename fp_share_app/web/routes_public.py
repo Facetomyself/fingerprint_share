@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse
 
 from ..application import collections as collections_uc
 from ..application import entries as entries_uc
@@ -45,16 +45,6 @@ def page_admin():
 @router.get("/admin/login")
 def page_login():
     return FileResponse(STATIC_DIR / "login.html")
-
-
-@router.get("/dl/{slug}.js")
-def download_collect_js(slug: str, conn: sqlite3.Connection = Depends(get_db)):
-    entry = entries_uc.get_entry(conn, slug, with_js=True)
-    if entry is None:
-        raise HTTPException(status_code=404, detail="条目不存在")
-    filename = f"{entry['slug']}.js"
-    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
-    return Response(content=entry["collect_js"], media_type="text/javascript; charset=utf-8", headers=headers)
 
 
 @router.get("/collect/{slug}")
