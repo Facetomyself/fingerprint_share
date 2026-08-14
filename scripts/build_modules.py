@@ -441,13 +441,28 @@ def build_module(spec: dict) -> dict:
     # 2. 环境采集页
     (out_dir / "collect.html").write_text(render(COLLECT_TEMPLATE, values), encoding="utf-8")
 
-    # 3. 采集脚本与行为剧本页：已在 modules/<slug>/ 内原地维护（迁移完成），
-    #    生成器不覆盖，只校验存在
+    # 3. 采集脚本已在 modules/<slug>/ 内原地维护；行为指纹采集页需注入
+    #    平台采集基础层引用（静态托管后不再经平台渲染器注入）
     collect_target = out_dir / "collect.js"
     if not collect_target.is_file():
         raise FileNotFoundError(f"collect.js missing: {collect_target}")
-    if has_behavior and not (out_dir / "challenge.html").is_file():
-        raise FileNotFoundError(f"challenge.html missing: {out_dir / 'challenge.html'}")
+    if has_behavior:
+        challenge_path = out_dir / "challenge.html"
+        if not challenge_path.is_file():
+            raise FileNotFoundError(f"challenge.html missing: {challenge_path}")
+        challenge_html = challenge_path.read_text(encoding="utf-8")
+        inject = (
+            '<script src="/static/js/behavior-core.js"></script>\n'
+            f'<script>window.__FP_ENTRY_SLUG = "{slug}";\n'
+            f'window.__FP_ENTRY_NAME = "{name}";</script>\n'
+            '<script src="/static/js/page-behavior.js"></script>\n'
+        )
+        if 'behavior-core.js' not in challenge_html:
+            if '</head>' in challenge_html:
+                challenge_html = challenge_html.replace('</head>', inject + '</head>', 1)
+            else:
+                challenge_html = inject + challenge_html
+            challenge_path.write_text(challenge_html, encoding='utf-8', newline='\n')
 
     # 5. README
     (out_dir / "README.md").write_text(render(README_TEMPLATE, values), encoding="utf-8")
