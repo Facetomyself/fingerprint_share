@@ -66,6 +66,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "collect_js/zhipin-security-js-boss.js",
         "has_behavior": 1,
+        "page_module_file": "page_modules/boss-login-zhipin.html",
     },
 ]
 
