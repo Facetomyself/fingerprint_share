@@ -38,7 +38,8 @@ SEED_ENTRIES = [
                        "cookie 键名形状 / DOM gate 原型链。来源 workspace/electricity-ruishu-web-v2。",
         "version": "v1",
         "js_file": "collect_js/ruishu-rs6-challenge-electricity.js",
-        "has_behavior": 0,
+        "has_behavior": 1,
+        "page_module_file": "page_modules/ruishu-rs6-challenge-electricity.html",
     },
     {
         "slug": "feilin-51job",
