@@ -48,7 +48,7 @@
         '<div class="actions">' +
         '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">打开环境采集页</a>' +
         behaviorSection +
-        '<a class="btn" href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹数据</a>' +
+        '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '/fingerprints">浏览指纹数据</a>' +
         '<a class="btn" href="/">返回导航</a>' +
         '</div>';
     }).catch(function (err) {

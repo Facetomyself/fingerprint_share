@@ -47,7 +47,7 @@ def render_collect_page(entry_name: str, slug: str, collect_js: str) -> HTMLResp
   </div>
   <div class="actions" style="margin-top:14px;">
     <a class="btn" href="/e/{safe_slug}">条目详情</a>
-    <a class="btn" href="/static/collections.html?entry={safe_slug}">浏览指纹数据</a>
+    <a class="btn" href="/e/{safe_slug}/fingerprints">浏览指纹数据</a>
     <a class="btn" href="/">返回导航</a>
   </div>
 </main>

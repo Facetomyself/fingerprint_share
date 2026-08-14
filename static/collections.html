@@ -24,10 +24,6 @@
   <div class="section">
     <div class="filter-row">
       <div class="filter-item">
-        <label for="entry-select">条目</label>
-        <select id="entry-select"><option value="">全部条目</option></select>
-      </div>
-      <div class="filter-item">
         <label for="kind-select">类型</label>
         <select id="kind-select">
           <option value="">全部</option>
@@ -80,9 +76,9 @@
     uaClass: 'UA 大类', uaBrowser: 'UA 小类', os: '操作系统',
     timezone: '时区', screen: '屏幕', language: '语言'
   };
-  var state = { entryId: null, kind: null, facets: {}, page: 1 };
+  // 条目专属页：风控由 URL /e/<slug>/fingerprints 绑定，不提供风控切换
+  var state = { entryId: null, entrySlug: null, entryName: null, kind: null, facets: {}, page: 1 };
 
-  var selectEl = document.getElementById('entry-select');
   var kindEl = document.getElementById('kind-select');
   var listRoot = document.getElementById('list-root');
   var pagerRoot = document.getElementById('pager');
@@ -92,23 +88,26 @@
   var facetSelects = {};
   FACET_KEYS.forEach(function (k) { facetSelects[k] = document.getElementById('facet-' + k); });
 
-  var initialEntry = queryParam('entry');
   var initialKind = queryParam('kind');
+  var segments = pathSegments(); // /e/<slug>/fingerprints -> ['e', '<slug>', 'fingerprints']
+  var boundSlug = segments.length >= 3 && segments[0] === 'e' && segments[2] === 'fingerprints'
+    ? decodeURIComponent(segments[1]) : null;
 
-  function loadEntries() {
-    return fetchJson('/api/entries').then(function (entries) {
-      entries.forEach(function (e) {
-        var opt = document.createElement('option');
-        opt.value = String(e.id);
-        opt.textContent = e.name;
-        if (initialEntry && e.slug === initialEntry) { opt.selected = true; }
-        selectEl.appendChild(opt);
-      });
-      state.entryId = selectEl.value ? Number(selectEl.value) : null;
-      if (initialKind && (initialKind === 'environment' || initialKind === 'behavior')) {
-        kindEl.value = initialKind;
-      }
-      state.kind = kindEl.value || null;
+  function loadBoundEntry() {
+    if (!boundSlug) {
+      document.querySelector('.hero h1').textContent = '指纹数据';
+      document.querySelector('.hero-sub').textContent = '请从导航页选择风控条目进入对应的指纹页。';
+      return Promise.resolve(null);
+    }
+    return fetchJson('/api/entries/' + encodeURIComponent(boundSlug)).then(function (entry) {
+      state.entryId = entry.id;
+      state.entrySlug = entry.slug;
+      state.entryName = entry.name;
+      document.querySelector('.hero h1').textContent = '指纹数据 · ' + entry.name;
+      document.querySelector('.hero-sub').textContent =
+        entry.risk_type + ' · ' + entry.website + ' · 条目专属指纹页。' +
+        '带出平台按 restricted-local 纪律执行。';
+      return entry;
     });
   }
 
@@ -159,9 +158,10 @@
     refreshOverview();
     return fetchJson('/api/collections?' + currentFilterParams()).then(function (data) {
       if (!data.items.length) {
+        var slugForLinks = state.entrySlug ? encodeURIComponent(state.entrySlug) : '';
         listRoot.innerHTML = '<div class="status">当前筛选下暂无采集记录。打开<a href="/collect/' +
-          (initialEntry ? encodeURIComponent(initialEntry) : '') + '">环境采集页</a>或<a href="/collect/' +
-          (initialEntry ? encodeURIComponent(initialEntry) : '') + '/behavior">行为采集页</a>产生数据。</div>';
+          slugForLinks + '">环境采集页</a>或<a href="/collect/' +
+          slugForLinks + '/behavior">行为采集页</a>产生数据。</div>';
         pagerRoot.innerHTML = '';
         return;
       }
@@ -550,7 +550,6 @@
   }
 
   function refresh() {
-    state.entryId = selectEl.value ? Number(selectEl.value) : null;
     state.kind = kindEl.value || null;
     state.facets = {};
     FACET_KEYS.forEach(function (k) {
@@ -604,7 +603,6 @@
     });
   }
 
-  selectEl.addEventListener('change', refresh);
   kindEl.addEventListener('change', refresh);
   FACET_KEYS.forEach(function (k) {
     facetSelects[k].addEventListener('change', refreshFacetOnly);
@@ -630,7 +628,14 @@
     location.href = '/api/export' + exportParams(false);
   });
 
-  loadEntries().then(loadFacets).then(loadPage).catch(function (err) {
+  loadBoundEntry().then(function () {
+    if (state.entryId === null) {
+      listRoot.innerHTML = '<div class="status"><a href="/">返回导航选择风控条目</a></div>';
+      pagerRoot.innerHTML = '';
+      return;
+    }
+    return loadFacets().then(loadPage);
+  }).catch(function (err) {
     listRoot.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
   });
 })();

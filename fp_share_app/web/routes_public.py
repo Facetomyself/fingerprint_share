@@ -37,6 +37,15 @@ def page_entry(slug: str):
     return FileResponse(STATIC_DIR / "entry.html")
 
 
+@router.get("/e/{slug}/fingerprints")
+def page_entry_fingerprints(slug: str, conn: sqlite3.Connection = Depends(get_db)):
+    """条目专属指纹页：URL 绑定风控，页面不提供风控切换。"""
+    entry = entries_uc.get_entry(conn, slug, with_js=False)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="条目不存在")
+    return FileResponse(STATIC_DIR / "collections.html")
+
+
 @router.get("/admin/")
 def page_admin():
     return FileResponse(STATIC_DIR / "admin.html")
