@@ -10,8 +10,9 @@ Web 环境指纹采集与共享平台。访问采集 URL 时在访问者浏览�
 |---|---|---|
 | 公开导航 | 按「风控类型-网站」分组浏览条目（如 `DataDome-radwell.com`、`瑞数6-xxx`） | 所有人 |
 | 条目页 | 查看说明、下载采集 JS 源码、进入指纹浏览 | 所有人 |
-| 采集页 | `/collect/<slug>` 执行条目 JS 采集浏览器环境指纹并上报 | 所有人 |
-| 指纹共享 | 浏览各条目采集记录（列表/详情/导出 JSON） | 所有人 |
+| 环境采集页 | `/collect/<slug>` 执行深度模板：environment 快照 32 组 + deepProbes 谎言检测（queryLies 10 接口逐项检查 / prototypeLies 40+ 接口 / phantomIframe 对比 / 双画布稳定性 / plugins-mimeTypes 交叉验证）+ trash 乱码检测 + resistance（RFP/Brave/Tor） | 所有人 |
+| 行为采集页 | `/collect/<slug>/behavior` 提示模拟真实交互，采集鼠标/键盘/滚动事件流，12 项启发式信号判定 + 特征统计 + 降采样轨迹（600 点/30s） | 所有人 |
+| 指纹共享 | 浏览各条目采集记录（kind 筛选、分面详情、轨迹可视化、导出 JSON） | 所有人 |
 | 后台 | 采集脚本上传/编辑/删除、采集记录清理 | 管理员登录 |
 
 ## 目录
@@ -50,8 +51,8 @@ Copy-Item .env.example .env
 
 ## 数据分级（重要）
 
-- 采集记录（`data/` 下的 SQLite，含 Canvas data URL、WebGL、音频等设备属性）在**平台运行时内公开共享**——浏览与下载是本平台设计意图。
-- **平台内公开不等于对外发布**。把指纹数据带出平台（写入报告、提交仓库、发送外部）时，按仓库 `docs/web-fingerprint-dataset.md` 的 restricted-local 纪律执行：只允许脱敏摘要（组件名、哈希、验证状态），不得输出原值。
+- 采集记录（`data/` 下的 SQLite）在**平台运行时内公开共享**——浏览与下载是本平台设计意图。记录分 environment（环境快照+deepProbes）与 behavior（行为信号+轨迹）两类。
+- **平台内公开不等于对外发布**。把指纹数据带出平台（写入报告、提交仓库、发送外部）时，按仓库 `docs/web-fingerprint-dataset.md` 的 restricted-local 纪律执行：环境数据只允许脱敏摘要（组件名、哈希、验证状态）；**行为轨迹与逐键间隔原值一律不得输出**，只允许信号判定摘要与统计值。
 - `data/` 整体 gitignore；建议对 `data\` 目录收紧 Windows ACL 至当前用户。
 - 长期归档可选走 `storage\datasets\web-fingerprints\generic-real\<YYYYMMDD>\` + manifest 流程。
 

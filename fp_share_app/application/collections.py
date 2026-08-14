@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 PAGE_SIZE = 50
 
-SUMMARY_KEYS = ["id", "entry_id", "collected_at", "visitor_ip", "user_agent", "summary", "duration_ms"]
+SUMMARY_KEYS = ["id", "entry_id", "kind", "collected_at", "visitor_ip", "user_agent", "summary", "duration_ms"]
 
 
 def _parse_summary(summary) -> str | None:
@@ -26,16 +26,18 @@ def _parse_summary(summary) -> str | None:
 
 def ingest(conn: sqlite3.Connection, entry_slug: str, payload: dict,
            summary=None, duration_ms: int | None = None,
-           visitor_ip: str | None = None, user_agent: str | None = None) -> int | None:
+           visitor_ip: str | None = None, user_agent: str | None = None,
+           kind: str = "environment") -> int | None:
     """写入一条采集记录，返回记录 id；entry 不存在返回 None。"""
     row = conn.execute("SELECT id FROM entries WHERE slug = ?", (entry_slug,)).fetchone()
     if row is None:
         return None
     cur = conn.execute(
-        "INSERT INTO collections (entry_id, collected_at, visitor_ip, user_agent, payload, summary, duration_ms)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO collections (entry_id, kind, collected_at, visitor_ip, user_agent, payload, summary, duration_ms)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (
             row["id"],
+            kind,
             datetime.now(timezone.utc).isoformat(),
             visitor_ip,
             user_agent,
@@ -53,16 +55,21 @@ def collection_summary_row(row: sqlite3.Row) -> dict:
 
 
 def list_collections(conn: sqlite3.Connection, entry_id: int | None = None,
+                     kind: str | None = None,
                      page: int = 1, page_size: int = PAGE_SIZE) -> dict:
     """分页列表（不含 payload 全文）。"""
-    sql = "SELECT id, entry_id, collected_at, visitor_ip, user_agent, summary, duration_ms FROM collections"
-    params: tuple = ()
+    sql = "SELECT id, entry_id, kind, collected_at, visitor_ip, user_agent, summary, duration_ms FROM collections"
+    where_clauses = []
+    params: list = []
     if entry_id is not None:
-        sql += " WHERE entry_id = ?"
-        params = (entry_id,)
-    total = conn.execute(f"SELECT COUNT(*) FROM collections{(' WHERE entry_id = ?' if entry_id is not None else '')}",
-                         params).fetchone()[0]
-    sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        where_clauses.append("entry_id = ?")
+        params.append(entry_id)
+    if kind is not None:
+        where_clauses.append("kind = ?")
+        params.append(kind)
+    where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+    total = conn.execute(f"SELECT COUNT(*) FROM collections{where_sql}", tuple(params)).fetchone()[0]
+    sql += where_sql + " ORDER BY id DESC LIMIT ? OFFSET ?"
     rows = conn.execute(sql, (*params, page_size, max(0, page - 1) * page_size)).fetchall()
     return {
         "total": total,
@@ -79,6 +86,7 @@ def get_collection(conn: sqlite3.Connection, collection_id: int) -> dict | None:
     return {
         "id": row["id"],
         "entry_id": row["entry_id"],
+        "kind": row["kind"],
         "collected_at": row["collected_at"],
         "visitor_ip": row["visitor_ip"],
         "user_agent": row["user_agent"],
@@ -94,19 +102,27 @@ def delete_collection(conn: sqlite3.Connection, collection_id: int) -> bool:
     return cur.rowcount > 0
 
 
-def export_collections(conn: sqlite3.Connection, entry_id: int | None = None) -> dict:
+def export_collections(conn: sqlite3.Connection, entry_id: int | None = None,
+                       kind: str | None = None) -> dict:
     """导出全部记录（含完整 payload）。"""
     sql = "SELECT * FROM collections"
-    params: tuple = ()
+    where_clauses = []
+    params: list = []
     if entry_id is not None:
-        sql += " WHERE entry_id = ?"
-        params = (entry_id,)
+        where_clauses.append("entry_id = ?")
+        params.append(entry_id)
+    if kind is not None:
+        where_clauses.append("kind = ?")
+        params.append(kind)
+    if where_clauses:
+        sql += " WHERE " + " AND ".join(where_clauses)
     sql += " ORDER BY id"
     records = []
-    for row in conn.execute(sql, params):
+    for row in conn.execute(sql, tuple(params)):
         records.append({
             "id": row["id"],
             "entry_id": row["entry_id"],
+            "kind": row["kind"],
             "collected_at": row["collected_at"],
             "visitor_ip": row["visitor_ip"],
             "user_agent": row["user_agent"],
@@ -117,6 +133,7 @@ def export_collections(conn: sqlite3.Connection, entry_id: int | None = None) ->
     return {
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "entry_id": entry_id,
+        "kind": kind,
         "count": len(records),
         "records": records,
     }

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行为指纹采集 - 指纹共享平台</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+    <a href="/admin/">后台</a>
+  </div>
+</header>
+<main class="container">
+  <div class="banner">
+    此页面将采集你的浏览器行为指纹（鼠标移动轨迹、键盘输入节奏、滚动模式）并存储与共享。
+    仅用于风控研究对照，请勿在隐私敏感环境打开。
+  </div>
+  <h1 id="bh-title">行为指纹采集</h1>
+  <p class="muted">条目: <code id="bh-slug">-</code></p>
+
+  <div class="section">
+    <h2>请模拟真实交互</h2>
+    <p>移动鼠标、滚动页面、在下方输入框中打字——就像日常使用浏览器一样。
+    首次交互起 30 秒后自动上报；也可以点击按钮提前结束（至少观察 3 秒）。</p>
+    <input type="text" id="bh-input-demo" placeholder="在这里打一段文字（示例）" style="max-width:420px;">
+    <div class="actions" style="margin-top:12px;">
+      <button id="bh-submit" disabled>结束并提交</button>
+    </div>
+    <p class="muted"><span id="bh-count">已记录 0 个事件</span> · <span id="bh-timer">等待首次交互...</span></p>
+    <div id="bh-status" class="status">等待交互...</div>
+  </div>
+
+  <p><a href="/">返回导航</a></p>
+</main>
+<script src="/static/js/behavior-core.js"></script>
+<script src="/static/js/behavior.js"></script>
+<script>
+(function () {
+  'use strict';
+  var pathMatch = location.pathname.match(/^\/collect\/([^/]+)\/behavior/);
+  var slug = pathMatch ? decodeURIComponent(pathMatch[1]) : '';
+  var slugEl = document.getElementById('bh-slug');
+  if (!slug) {
+    slugEl.textContent = 'URL 缺少条目标识';
+    return;
+  }
+  slugEl.textContent = slug;
+  fetch('/api/entries/' + encodeURIComponent(slug)).then(function (resp) {
+    return resp.json();
+  }).then(function (entry) {
+    document.getElementById('bh-title').textContent = '行为指纹采集 - ' + entry.name;
+  }).catch(function () {
+    slugEl.textContent = slug + '（条目信息加载失败）';
+  });
+})();
+</script>
+</body>
+</html>

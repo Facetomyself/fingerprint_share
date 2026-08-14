@@ -54,6 +54,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         entry_slug: entrySlug,
+        kind: (payload && (payload.kind === 'behavior' || payload.kind === 'environment')) ? payload.kind : 'environment',
         payload: payload,
         summary: makeSummary(payload),
         duration_ms: (payload && typeof payload.durationMs === 'number') ? payload.durationMs : null

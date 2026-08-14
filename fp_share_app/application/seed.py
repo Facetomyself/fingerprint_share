@@ -9,15 +9,15 @@ from ..infrastructure.db import init_db
 
 SEED_ENTRIES = [
     {
-        "slug": "generic-browser-env-v1",
-        "name": "通用-浏览器环境基线",
-        "description": "通用浏览器环境指纹基线模板 v2：30 组件。navigator 20+ 字段/screen/viewport/双 Canvas hash/"
-                       "WebGL 18 参数/OffscreenCanvas/AudioContext/原型行为探测（hasFocus/setProperty descriptor）/"
-                       "plugins 深度/字体测量/automation flags/WebRTC/API 表面矩阵/timing 全字段/iframe realm 深度/"
-                       "cookie-history/媒体能力/Worker/Intl/时区。维度对齐 radwell DataDome 环境面研究"
-                       "（browser 189 终端探测分类），设计参考 FingerprintJS v5 (MIT)。",
-        "version": "v2",
-        "js_file": "collect_js/generic-browser-env-v2.js",
+        "slug": "generic-deep-v3",
+        "name": "通用-deep-fingerprint-v3",
+        "description": "深度浏览器指纹基线 v3：environment 快照 32 组 + deepProbes 谎言检测三层"
+                       "（queryLies 10 接口 ~20 项检查 / prototypeLies 40+ 接口递归 / phantomIframe 对比 / "
+                       "双画布稳定性 / plugins-mimeTypes 交叉验证）+ trash 乱码检测 + resistance"
+                       "（timer precision/RFP/Brave/Tor/扩展哈希）。行为指纹走独立行为采集页。"
+                       "机制参考 CreepJS (MIT)，自写实现。",
+        "version": "v3",
+        "js_file": "collect_js/generic-deep-v3.js",
     },
 ]
 

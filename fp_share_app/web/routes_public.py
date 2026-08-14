@@ -65,6 +65,14 @@ def page_collect(slug: str, conn: sqlite3.Connection = Depends(get_db)):
     return render_collect_page(entry["name"], entry["slug"], entry["collect_js"])
 
 
+@router.get("/collect/{slug}/behavior")
+def page_collect_behavior(slug: str, conn: sqlite3.Connection = Depends(get_db)):
+    entry = entries_uc.get_entry(conn, slug, with_js=False)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="条目不存在")
+    return FileResponse(STATIC_DIR / "behavior.html")
+
+
 @router.get("/api/entries")
 def api_list_entries(risk_type: str | None = None, conn: sqlite3.Connection = Depends(get_db)):
     return entries_uc.list_entries(conn, with_js=False, risk_type=risk_type)
@@ -95,6 +103,24 @@ async def api_ingest(request: Request, conn: sqlite3.Connection = Depends(get_db
     payload = data.get("payload")
     if not isinstance(entry_slug, str) or not isinstance(payload, dict):
         raise HTTPException(status_code=422, detail="entry_slug 与 payload（对象）必填")
+    kind = data.get("kind", "environment")
+    if kind not in ("environment", "behavior"):
+        raise HTTPException(status_code=422, detail="kind 必须是 environment 或 behavior")
+    if kind == "behavior":
+        behavior = payload.get("behavior")
+        if not isinstance(behavior, dict):
+            raise HTTPException(status_code=422, detail="kind=behavior 时 payload.behavior 必填")
+        trajectory = behavior.get("trajectory")
+        session = behavior.get("session")
+        if isinstance(trajectory, dict) and isinstance(trajectory.get("points"), list):
+            if len(trajectory["points"]) > 600:
+                raise HTTPException(status_code=422, detail="轨迹点数超过 600 上限")
+        if isinstance(session, dict) and isinstance(session.get("durationMs"), int):
+            if session["durationMs"] > 60000:
+                raise HTTPException(status_code=422, detail="行为会话时长超过 60s 上限")
+        score = behavior.get("score")
+        if score is not None and not isinstance(score, (int, float)):
+            raise HTTPException(status_code=422, detail="behavior.score 必须是数字")
     summary = data.get("summary")
     duration_ms = data.get("duration_ms")
     if duration_ms is not None and not isinstance(duration_ms, int):
@@ -108,6 +134,7 @@ async def api_ingest(request: Request, conn: sqlite3.Connection = Depends(get_db
         duration_ms=duration_ms,
         visitor_ip=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
+        kind=kind,
     )
     if record_id is None:
         raise HTTPException(status_code=404, detail="条目不存在")
@@ -115,11 +142,13 @@ async def api_ingest(request: Request, conn: sqlite3.Connection = Depends(get_db
 
 
 @router.get("/api/collections")
-def api_list_collections(entry_id: int | None = None, page: int = 1,
+def api_list_collections(entry_id: int | None = None, kind: str | None = None, page: int = 1,
                          conn: sqlite3.Connection = Depends(get_db)):
+    if kind is not None and kind not in ("environment", "behavior"):
+        raise HTTPException(status_code=422, detail="kind 必须是 environment 或 behavior")
     if page < 1:
         page = 1
-    return collections_uc.list_collections(conn, entry_id=entry_id, page=page)
+    return collections_uc.list_collections(conn, entry_id=entry_id, kind=kind, page=page)
 
 
 @router.get("/api/collections/{collection_id}")
@@ -131,8 +160,11 @@ def api_get_collection(collection_id: int, conn: sqlite3.Connection = Depends(ge
 
 
 @router.get("/api/export")
-def api_export(entry_id: int | None = None, conn: sqlite3.Connection = Depends(get_db)):
-    data = collections_uc.export_collections(conn, entry_id=entry_id)
+def api_export(entry_id: int | None = None, kind: str | None = None,
+               conn: sqlite3.Connection = Depends(get_db)):
+    if kind is not None and kind not in ("environment", "behavior"):
+        raise HTTPException(status_code=422, detail="kind 必须是 environment 或 behavior")
+    data = collections_uc.export_collections(conn, entry_id=entry_id, kind=kind)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     filename = f"fingerprints-{stamp}.json"
     return JSONResponse(

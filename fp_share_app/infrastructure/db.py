@@ -23,6 +23,8 @@ CREATE INDEX IF NOT EXISTS idx_entries_risk_type ON entries(risk_type);
 CREATE TABLE IF NOT EXISTS collections (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     entry_id     INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+    kind         TEXT NOT NULL DEFAULT 'environment'
+                 CHECK (kind IN ('environment','behavior')),
     collected_at TEXT NOT NULL,
     visitor_ip   TEXT,
     user_agent   TEXT,
@@ -30,7 +32,8 @@ CREATE TABLE IF NOT EXISTS collections (
     summary      TEXT,
     duration_ms  INTEGER
 );
-CREATE INDEX IF NOT EXISTS idx_collections_entry_time ON collections(entry_id, collected_at);
+CREATE INDEX IF NOT EXISTS idx_collections_entry_kind_time
+    ON collections(entry_id, kind, collected_at);
 """
 
 

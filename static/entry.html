@@ -40,7 +40,8 @@
         '<div class="section"><h2>说明</h2><p>' + escapeHtml(e.description || '（无描述）') + '</p></div>' +
         '<div class="actions">' +
         '<a class="btn btn-primary" href="/dl/' + encodeURIComponent(e.slug) + '.js">下载采集脚本</a>' +
-        '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '">打开采集页</a>' +
+        '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '">打开环境采集页</a>' +
+        '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">打开行为采集页</a>' +
         '<a class="btn" href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹数据</a>' +
         '<a class="btn" href="/">返回导航</a>' +
         '</div>';

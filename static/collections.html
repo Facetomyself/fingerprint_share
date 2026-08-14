@@ -16,13 +16,20 @@
 </header>
 <main class="container">
   <h1>指纹数据浏览</h1>
-  <p class="muted">平台内公开共享。带出平台（报告/仓库/外部）时按 restricted-local 纪律执行：只允许脱敏摘要，不得输出原值。</p>
+  <p class="muted">平台内公开共享。带出平台（报告/仓库/外部）时按 restricted-local 纪律执行：
+    环境数据只允许脱敏摘要；行为轨迹与击键间隔原值一律不得输出。</p>
 
   <div class="section">
     <label for="entry-select">条目</label>
     <select id="entry-select"><option value="">全部条目</option></select>
+    <label for="kind-select">类型</label>
+    <select id="kind-select">
+      <option value="">全部</option>
+      <option value="environment">环境指纹</option>
+      <option value="behavior">行为指纹</option>
+    </select>
     <div class="actions" style="margin-top:10px;">
-      <button id="export-btn" class="secondary">导出当前条目 JSON</button>
+      <button id="export-btn" class="secondary">导出当前筛选 JSON</button>
     </div>
   </div>
 
@@ -34,15 +41,17 @@
 <script>
 (function () {
   'use strict';
-  var state = { entryId: null, page: 1 };
+  var state = { entryId: null, kind: null, page: 1 };
 
   var selectEl = document.getElementById('entry-select');
+  var kindEl = document.getElementById('kind-select');
   var listRoot = document.getElementById('list-root');
   var pagerRoot = document.getElementById('pager');
   var detailRoot = document.getElementById('detail-root');
   var exportBtn = document.getElementById('export-btn');
 
   var initialEntry = queryParam('entry');
+  var initialKind = queryParam('kind');
 
   function loadEntries() {
     return fetchJson('/api/entries').then(function (entries) {
@@ -54,32 +63,58 @@
         selectEl.appendChild(opt);
       });
       state.entryId = selectEl.value ? Number(selectEl.value) : null;
+      if (initialKind && (initialKind === 'environment' || initialKind === 'behavior')) {
+        kindEl.value = initialKind;
+      }
+      state.kind = kindEl.value || null;
     });
+  }
+
+  function badge(verdict) {
+    if (verdict === 'legit') {
+      return '<span class="badge badge-ok">正常</span>';
+    }
+    if (verdict === 'suspicious') {
+      return '<span class="badge badge-warn">可疑</span>';
+    }
+    return '<span class="badge">' + escapeHtml(verdict) + '</span>';
   }
 
   function loadPage() {
     listRoot.innerHTML = '<div class="status">正在加载...</div>';
-    var url = '/api/collections?page=' + state.page;
-    if (state.entryId !== null) { url += '&entry_id=' + state.entryId; }
-    return fetchJson(url).then(function (data) {
+    var params = ['page=' + state.page];
+    if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
+    if (state.kind) { params.push('kind=' + state.kind); }
+    return fetchJson('/api/collections?' + params.join('&')).then(function (data) {
       if (!data.items.length) {
         listRoot.innerHTML = '<div class="status">暂无采集记录。打开<a href="/collect/' +
-          (initialEntry ? encodeURIComponent(initialEntry) : '') + '">采集页</a>产生数据。</div>';
+          (initialEntry ? encodeURIComponent(initialEntry) : '') + '">环境采集页</a>或<a href="/collect/' +
+          (initialEntry ? encodeURIComponent(initialEntry) : '') + '/behavior">行为采集页</a>产生数据。</div>';
         pagerRoot.innerHTML = '';
         return;
       }
-      var html = '<table><tr><th>ID</th><th>时间 (UTC)</th><th>visitorId</th>' +
-        '<th>维度</th><th>耗时</th><th>IP</th><th>操作</th></tr>';
+      var html = '<table><tr><th>ID</th><th>类型</th><th>时间 (UTC)</th><th>摘要</th>' +
+        '<th>耗时</th><th>IP</th><th>操作</th></tr>';
       data.items.forEach(function (r) {
         var summary = null;
         try { summary = JSON.parse(r.summary); } catch (e) { summary = null; }
-        var visitorId = summary && summary.visitorId ? summary.visitorId.slice(0, 16) + '...' : '-';
-        var dims = summary && summary.dimensions !== undefined ? summary.dimensions : '-';
-        var errors = summary && summary.errors && summary.errors.length ? ('，错误 ' + summary.errors.length) : '';
+        var kindLabel = r.kind === 'behavior' ? '行为' : '环境';
+        var summaryCell = '-';
+        if (r.kind === 'behavior' && summary) {
+          var b = summary;
+          summaryCell = badge(b.verdict) + ' score=' + escapeHtml(b.score) +
+            (b.dimensions ? ' events=' + (b.dimensions.mousemove || 0) + '/' +
+              (b.dimensions.keydown || 0) + '/' + (b.dimensions.wheel || 0) : '');
+        } else if (summary) {
+          var visitorId = summary.visitorId ? summary.visitorId.slice(0, 16) + '...' : '-';
+          var errNote = summary.errors && summary.errors.length ? ('，错误 ' + summary.errors.length) : '';
+          summaryCell = 'visitorId=' + escapeHtml(visitorId) + '，维度=' +
+            (summary.dimensions !== undefined ? summary.dimensions : '-') + escapeHtml(errNote);
+        }
         html += '<tr><td>' + r.id + '</td>' +
+          '<td>' + kindLabel + '</td>' +
           '<td>' + escapeHtml(shortTime(r.collected_at)) + '</td>' +
-          '<td>' + escapeHtml(visitorId) + '</td>' +
-          '<td>' + dims + escapeHtml(errors) + '</td>' +
+          '<td>' + summaryCell + '</td>' +
           '<td>' + (r.duration_ms === null ? '-' : r.duration_ms + 'ms') + '</td>' +
           '<td>' + escapeHtml(r.visitor_ip || '-') + '</td>' +
           '<td><a href="#" data-id="' + r.id + '" class="detail-link">详情</a></td></tr>';
@@ -105,35 +140,337 @@
     });
   }
 
+  function jsonPanel(title, obj) {
+    return '<div class="section"><h2>' + escapeHtml(title) + '</h2>' +
+      '<pre class="payload">' + escapeHtml(JSON.stringify(obj, null, 2)) + '</pre>' +
+      '<div class="actions"><button class="secondary fold-btn">收起</button></div></div>';
+  }
+
+  function light(value) {
+    if (value === true) { return '<span class="badge badge-ok">是</span>'; }
+    if (value === false) { return '<span class="badge">否</span>'; }
+    if (value === null || value === undefined) { return '<span class="badge">无</span>'; }
+    return '<span class="badge">' + escapeHtml(value) + '</span>';
+  }
+
+  function renderEnvironmentDetail(payload, meta) {
+    var html = '<div class="section"><h2>记录 #' + meta.id + '（环境指纹）</h2>' +
+      '<p class="muted">时间: ' + escapeHtml(shortTime(meta.collected_at)) +
+      ' | IP: ' + escapeHtml(meta.visitor_ip || '-') +
+      ' | 脚本: ' + escapeHtml(payload.script || '-') +
+      ' | 耗时: ' + (payload.durationMs !== undefined ? payload.durationMs + 'ms' : '-') + '</p>' +
+      '<p>visitorId: <code>' + escapeHtml((payload.visitorId || '-').slice(0, 32)) + '</code></p></div>';
+
+    // components 折叠面板
+    if (payload.components) {
+      html += '<div class="section"><h2>组件快照</h2><table><tr><th>组件</th><th>关键值预览</th></tr>';
+      Object.keys(payload.components).sort().forEach(function (name) {
+        var value = payload.components[name];
+        var preview = '-';
+        if (value === null) { preview = 'null'; }
+        else if (typeof value === 'object') {
+          var keys = Object.keys(value);
+          var firstKey = keys[0];
+          var firstVal = firstKey !== undefined ? value[firstKey] : null;
+          var firstValStr = firstVal !== null && typeof firstVal === 'object'
+            ? JSON.stringify(firstVal).slice(0, 40) : String(firstVal === null ? 'null' : firstVal).slice(0, 40);
+          preview = keys.length + ' 字段: ' + escapeHtml(firstKey) + '=' + escapeHtml(firstValStr);
+        } else {
+          preview = String(value).slice(0, 60);
+        }
+        html += '<tr><td><code>' + escapeHtml(name) + '</code></td><td>' + preview + '</td></tr>';
+      });
+      html += '</table></div>';
+    }
+
+    var dp = payload.deepProbes;
+    if (dp) {
+      html += '<div class="section"><h2>deepProbes 谎言检测</h2>';
+
+      if (dp.lies && dp.lies.queryLies) {
+        var ql = dp.lies.queryLies;
+        html += '<h3>queryLies（检查 ' + ql.totalChecked + ' 项函数）</h3>';
+        var qlFailCount = 0;
+        Object.keys(ql.interfaces || {}).forEach(function (ifaceName) {
+          var entry = ql.interfaces[ifaceName];
+          if (entry.failures && entry.failures.length) { qlFailCount += entry.failures.length; }
+        });
+        if (qlFailCount === 0) {
+          html += '<p class="muted">无失败项（全部函数通过 toString 白名单/ownProps/descriptor 检查）。</p>';
+        } else {
+          html += '<table><tr><th>接口</th><th>检查项</th><th>详情</th></tr>';
+          Object.keys(ql.interfaces || {}).forEach(function (ifaceName) {
+            var entry = ql.interfaces[ifaceName];
+            (entry.failures || []).forEach(function (f) {
+              html += '<tr><td><code>' + escapeHtml(ifaceName) + '</code></td>' +
+                '<td>' + escapeHtml(f.check) + '</td><td>' + escapeHtml(f.detail) + '</td></tr>';
+            });
+          });
+          html += '</table>';
+        }
+
+        if (dp.lies.prototypeLies) {
+          var pl = dp.lies.prototypeLies;
+          html += '<h3>prototypeLies（' + pl.checkedInterfaces + ' 个接口原型链采集）</h3>';
+          if (pl.anomalies && pl.anomalies.length) {
+            html += '<table><tr><th>接口</th><th>异常</th></tr>';
+            pl.anomalies.forEach(function (a) {
+              html += '<tr><td><code>' + escapeHtml(a.api) + '</code></td><td>' + escapeHtml(a.issue) + '</td></tr>';
+            });
+            html += '</table>';
+          } else {
+            html += '<p class="muted">无构造器回指/空属性名异常。</p>';
+          }
+          html += '<table><tr><th>接口</th><th>原型层数</th><th>属性数</th><th>hashMini</th></tr>';
+          (pl.interfaces || []).forEach(function (iface) {
+            html += '<tr><td><code>' + escapeHtml(iface.name) + '</code></td>' +
+              '<td>' + iface.layers + '</td><td>' + iface.propCount + '</td>' +
+              '<td><code>' + escapeHtml(iface.hashMini) + '</code></td></tr>';
+          });
+          html += '</table>';
+        }
+
+        if (dp.lies.phantomIframe) {
+          var ph = dp.lies.phantomIframe;
+          html += '<h3>phantomIframe（对比 ' + ph.compared + ' 项）</h3>';
+          if (ph.error) {
+            html += '<p class="muted">隔离环境错误: ' + escapeHtml(ph.error) + '</p>';
+          } else if (ph.diff && ph.diff.length) {
+            html += '<table><tr><th>属性</th><th>主窗口</th><th>幻影帧</th></tr>';
+            ph.diff.forEach(function (row) {
+              html += '<tr><td>' + escapeHtml(row.prop) + '</td>' +
+                '<td>' + escapeHtml(JSON.stringify(row.main)) + '</td>' +
+                '<td>' + escapeHtml(JSON.stringify(row.phantom)) + '</td></tr>';
+            });
+            html += '</table>';
+          } else {
+            html += '<p class="muted">主窗口与幻影帧一致。</p>';
+          }
+        }
+
+        if (dp.lies.stability) {
+          var st = dp.lies.stability;
+          html += '<h3>stability 稳定性</h3>';
+          html += '<p>canvas 同元素两次渲染: ' + light(st.canvasSameElement && st.canvasSameElement.pass) +
+            ' | canvas 重建对比: ' + light(st.canvasRecreated && st.canvasRecreated.pass) +
+            '（差异像素 ' + (st.canvasRecreated ? st.canvasRecreated.diffPixels : '-') + '）' +
+            ' | Math 期望值: ' + light(st.mathPass) +
+            ' | 音频波形: ' + light(st.audioStable) + '</p>';
+          if (st.mathCases) {
+            html += '<table><tr><th>Math 用例</th><th>通过</th></tr>';
+            st.mathCases.forEach(function (mc) {
+              html += '<tr><td>' + escapeHtml(mc.name) + '</td><td>' + light(mc.pass) + '</td></tr>';
+            });
+            html += '</table>';
+          }
+        }
+
+        if (dp.lies.crossValidation) {
+          var cv = dp.lies.crossValidation;
+          html += '<h3>crossValidation plugins/mimeTypes</h3>';
+          html += '<p>一致: ' + light(cv.pass);
+          if (cv.counts) { html += '（plugins=' + cv.counts.plugins + ' mimeTypes=' + cv.counts.mimeTypes + '）'; }
+          html += '</p>';
+          if (cv.issues && cv.issues.length) {
+            html += '<table><tr><th>插件</th><th>问题</th></tr>';
+            cv.issues.forEach(function (iss) {
+              html += '<tr><td>' + escapeHtml(iss.plugin) + '</td><td>' + escapeHtml(iss.issue) + '</td></tr>';
+            });
+            html += '</table>';
+          }
+        }
+        html += '</div>';
+      }
+
+      if (dp.trash) {
+        html += '<div class="section"><h2>trash 垃圾值检测</h2>';
+        html += '<p>WebGL renderer 分级: <span class="badge">' + escapeHtml(dp.trash.rendererGrade || '-') + '</span>' +
+          '（品牌命中 ' + (dp.trash.rendererBrandCount !== undefined ? dp.trash.rendererBrandCount : '-') + '）</p>';
+        if (dp.trash.checks && dp.trash.checks.length) {
+          html += '<table><tr><th>字段</th><th>命中模式</th></tr>';
+          dp.trash.checks.forEach(function (c) {
+            var patterns = c.gibberish && c.gibberish.hits
+              ? c.gibberish.hits.map(function (h) { return h.patternId + ':' + h.token; }).join(', ')
+              : '-';
+            html += '<tr><td>' + escapeHtml(c.field) + '</td><td>' + escapeHtml(patterns) + '</td></tr>';
+          });
+          html += '</table>';
+        } else {
+          html += '<p class="muted">无命中。</p>';
+        }
+        html += '</div>';
+      }
+
+      if (dp.resistance) {
+        var rs = dp.resistance;
+        html += '<div class="section"><h2>resistance 反指纹模式</h2>';
+        html += '<p>Brave: ' + light(rs.brave && rs.brave.detected) +
+          ' | RFP 特征分: ' + rs.rfpScore + '/6' +
+          ' | Tor 特征分: ' + rs.torScore + '/3</p>';
+        if (rs.timerPrecision) {
+          html += '<p>timer precision 末位全同: ' + light(rs.timerPrecision.allSame) +
+            '（' + (rs.timerPrecision.digits || []).join(',') + '）</p>';
+        }
+        if (rs.rfpIndicators) {
+          html += '<table><tr><th>RFP 指标</th><th>值</th></tr>';
+          Object.keys(rs.rfpIndicators).forEach(function (k) {
+            html += '<tr><td>' + escapeHtml(k) + '</td><td>' + light(rs.rfpIndicators[k]) + '</td></tr>';
+          });
+          html += '</table>';
+        }
+        html += '</div>';
+      }
+    }
+
+    if (payload.errors && payload.errors.length) {
+      html += '<div class="section"><h2>采集错误</h2><pre class="payload">' +
+        escapeHtml(payload.errors.join('\n')) + '</pre></div>';
+    }
+    html += jsonPanel('原始 JSON', payload);
+    return html;
+  }
+
+  function renderBehaviorDetail(payload, meta) {
+    var b = payload.behavior;
+    if (!b) { return jsonPanel('原始 JSON（behavior 结构缺失）', payload); }
+    var html = '<div class="section"><h2>记录 #' + meta.id + '（行为指纹）</h2>' +
+      '<p class="muted">时间: ' + escapeHtml(shortTime(meta.collected_at)) +
+      ' | IP: ' + escapeHtml(meta.visitor_ip || '-') +
+      ' | 会话: ' + Math.round((b.session ? b.session.durationMs : 0) / 1000) + ' 秒' + '</p>' +
+      '<p style="font-size:32px;margin:8px 0;">score=' + escapeHtml(b.score) + ' ' + badge(b.verdict) +
+      ' <span class="muted" style="font-size:14px;">置信度: ' + escapeHtml(b.confidence) + '</span></p></div>';
+
+    html += '<div class="section"><h2>信号面板（12 项启发式）</h2>' +
+      '<table><tr><th>信号</th><th>权重</th><th>置信</th><th>触发</th><th>详情</th></tr>';
+    (b.signals || []).forEach(function (s) {
+      html += '<tr><td><code>' + escapeHtml(s.id) + '</code></td>' +
+        '<td>' + s.weight + '</td><td>' + escapeHtml(s.confidence) + '</td>' +
+        '<td>' + (s.triggered ? '<span class="badge badge-warn">是</span>' : '<span class="badge">否</span>') + '</td>' +
+        '<td>' + escapeHtml(s.detail || '-') + '</td></tr>';
+    });
+    html += '</table></div>';
+
+    html += '<div class="section"><h2>统计特征</h2>';
+    if (b.stats) {
+      var st = b.stats;
+      html += '<p>速度百分位: p50=' + (st.speedPercentiles ? st.speedPercentiles.p50 : '-') +
+        ' p90=' + (st.speedPercentiles ? st.speedPercentiles.p90 : '-') +
+        ' max=' + (st.speedPercentiles ? st.speedPercentiles.max : '-') + ' px/ms' +
+        ' | 方向转向: ' + (st.directionTurns !== undefined ? st.directionTurns : '-') + '</p>';
+      if (st.intervalHistogram && st.intervalHistogram.length) {
+        var maxCount = 1;
+        st.intervalHistogram.forEach(function (h) { if (h[1] > maxCount) { maxCount = h[1]; } });
+        html += '<div class="histogram">';
+        st.intervalHistogram.forEach(function (h) {
+          var pct = Math.max(2, Math.round((h[1] / maxCount) * 100));
+          html += '<div class="hist-row"><span class="hist-label">' + escapeHtml(h[0]) + '</span>' +
+            '<div class="hist-bar-wrap"><div class="hist-bar" style="width:' + pct + '%;"></div></div>' +
+            '<span class="hist-count">' + h[1] + '</span></div>';
+        });
+        html += '</div>';
+      }
+      if (st.keyIntervalMs) {
+        html += '<p class="muted">键盘间隔: 均值 ' + st.keyIntervalMs.mean + 'ms，CV ' +
+          (st.keyIntervalMs.cv === null ? '-' : st.keyIntervalMs.cv) +
+          '（样本 ' + st.keyIntervalMs.samples + '）</p>';
+      }
+    }
+    html += '</div>';
+
+    if (b.trajectory && b.trajectory.points && b.trajectory.points.length) {
+      html += '<div class="section"><h2>轨迹（降采样 ' + b.trajectory.sampled + '/' +
+        b.trajectory.totalEvents + ' 点，时长 ' + Math.round(b.trajectory.durationMs / 1000) + 's）</h2>' +
+        '<canvas id="traj-canvas" width="900" height="420" style="max-width:100%;border:1px solid #d0d7de;"></canvas>' +
+        '<p class="muted">灰=移动 红=点击 蓝=滚动 绿=按键 橙=触摸（x/y 归一化到视口坐标）</p></div>';
+    }
+
+    html += jsonPanel('原始 JSON', payload);
+    return html;
+  }
+
   function loadDetail(id) {
     detailRoot.innerHTML = '<div class="status">正在加载记录 #' + id + '...</div>';
     fetchJson('/api/collections/' + id).then(function (r) {
-      detailRoot.innerHTML =
-        '<div class="section"><h2>记录 #' + r.id + '</h2>' +
-        '<p class="muted">时间: ' + escapeHtml(shortTime(r.collected_at)) +
-        ' | IP: ' + escapeHtml(r.visitor_ip || '-') +
-        ' | UA: ' + escapeHtml(r.user_agent || '-') + '</p>' +
-        '<pre class="payload">' + escapeHtml(JSON.stringify(r.payload, null, 2)) + '</pre>' +
-        '<div class="actions"><button class="secondary" id="close-detail">收起</button></div></div>';
-      document.getElementById('close-detail').onclick = function () {
-        detailRoot.innerHTML = '';
-      };
+      var payload = r.payload || {};
+      var html;
+      if (r.kind === 'behavior') {
+        html = renderBehaviorDetail(payload, r);
+      } else {
+        html = renderEnvironmentDetail(payload, r);
+      }
+      detailRoot.innerHTML = html;
+      Array.prototype.forEach.call(detailRoot.querySelectorAll('.fold-btn'), function (btn) {
+        btn.onclick = function () {
+          var section = btn.closest('.section');
+          if (section) { section.remove(); }
+        };
+      });
+      var canvas = document.getElementById('traj-canvas');
+      if (canvas && r.kind === 'behavior' && payload.behavior && payload.behavior.trajectory) {
+        drawTrajectory(canvas, payload.behavior.trajectory);
+      }
+      detailRoot.scrollIntoView();
     }).catch(function (err) {
       detailRoot.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
     });
   }
 
-  selectEl.addEventListener('change', function () {
+  function drawTrajectory(canvas, trajectory) {
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    var points = trajectory.points;
+    var w = window.innerWidth || 1920;
+    var h = window.innerHeight || 1080;
+    var pad = 20;
+    var sx = (canvas.width - pad * 2) / w;
+    var sy = (canvas.height - pad * 2) / h;
+    var colors = { m: '#9aa4ae', c: '#cf222e', w: '#0969da', k: '#1a7f37', t: '#bf8700' };
+    for (var i = 1; i < points.length; i++) {
+      var p0 = points[i - 1];
+      var p1 = points[i];
+      var ty = p1.ty === 'm' ? 'm' : p1.ty;
+      ctx.strokeStyle = colors[ty] || '#9aa4ae';
+      ctx.globalAlpha = 0.6;
+      ctx.lineWidth = ty === 'm' ? 1 : 2;
+      ctx.beginPath();
+      ctx.moveTo(pad + p0.x * sx, pad + p0.y * sy);
+      ctx.lineTo(pad + p1.x * sx, pad + p1.y * sy);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // 时间轴刻度
+    ctx.fillStyle = '#57606a';
+    ctx.font = '11px sans-serif';
+    var totalMs = trajectory.durationMs || 30000;
+    for (var t = 0; t <= totalMs; t += 5000) {
+      var tx = pad + (t / totalMs) * (canvas.width - pad * 2);
+      ctx.fillText((t / 1000) + 's', tx, canvas.height - 6);
+      ctx.beginPath();
+      ctx.moveTo(tx, canvas.height - pad);
+      ctx.lineTo(tx, canvas.height - pad + 4);
+      ctx.strokeStyle = '#57606a';
+      ctx.stroke();
+    }
+  }
+
+  function refresh() {
     state.entryId = selectEl.value ? Number(selectEl.value) : null;
+    state.kind = kindEl.value || null;
     state.page = 1;
     detailRoot.innerHTML = '';
     loadPage();
-  });
+  }
+
+  selectEl.addEventListener('change', refresh);
+  kindEl.addEventListener('change', refresh);
 
   exportBtn.addEventListener('click', function () {
-    var url = '/api/export';
-    if (state.entryId !== null) { url += '?entry_id=' + state.entryId; }
-    location.href = url;
+    var params = [];
+    if (state.entryId !== null) { params.push('entry_id=' + state.entryId); }
+    if (state.kind) { params.push('kind=' + state.kind); }
+    location.href = '/api/export' + (params.length ? '?' + params.join('&') : '');
   });
 
   loadEntries().then(loadPage).catch(function (err) {

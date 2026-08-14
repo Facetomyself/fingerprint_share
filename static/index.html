@@ -43,7 +43,8 @@
           ' <span class="muted">v' + escapeHtml(e.version) + '</span></div>' +
           '<div class="actions">' +
           '<a href="/e/' + encodeURIComponent(e.slug) + '">详情</a>' +
-          '<a href="/collect/' + encodeURIComponent(e.slug) + '">采集页</a>' +
+          '<a href="/collect/' + encodeURIComponent(e.slug) + '">环境采集页</a>' +
+          '<a href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>' +
           '<a href="/dl/' + encodeURIComponent(e.slug) + '.js">下载脚本</a>' +
           '<a href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹</a>' +
           '</div></div>';
