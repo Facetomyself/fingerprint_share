@@ -54,32 +54,40 @@ def ensure_unique_slug(conn: sqlite3.Connection, slug: str) -> str:
     return candidate
 
 
-def entry_row_to_dict(row: sqlite3.Row, with_js: bool = False) -> dict:
+def entry_row_to_dict(row: sqlite3.Row, with_js: bool = False, with_module: bool = False) -> dict:
     keys = ["id", "slug", "name", "risk_type", "website", "description", "version",
             "has_behavior", "created_at", "updated_at"]
     if with_js:
         keys.append("collect_js")
+    if with_module:
+        keys.append("page_module")
     return {k: row[k] for k in keys}
 
 
-def list_entries(conn: sqlite3.Connection, with_js: bool = False, risk_type: str | None = None) -> list[dict]:
+def has_page_module(row: sqlite3.Row) -> bool:
+    return bool((row["page_module"] or "").strip()) if "page_module" in row.keys() else False
+
+
+def list_entries(conn: sqlite3.Connection, with_js: bool = False, risk_type: str | None = None,
+                 with_module: bool = False) -> list[dict]:
     sql = "SELECT * FROM entries"
     params: tuple = ()
     if risk_type:
         sql += " WHERE risk_type = ?"
         params = (risk_type,)
     sql += " ORDER BY risk_type, website, id"
-    return [entry_row_to_dict(r, with_js) for r in conn.execute(sql, params)]
+    return [entry_row_to_dict(r, with_js, with_module) for r in conn.execute(sql, params)]
 
 
-def get_entry(conn: sqlite3.Connection, slug: str, with_js: bool = True) -> dict | None:
+def get_entry(conn: sqlite3.Connection, slug: str, with_js: bool = True,
+              with_module: bool = False) -> dict | None:
     row = conn.execute("SELECT * FROM entries WHERE slug = ?", (slug,)).fetchone()
-    return entry_row_to_dict(row, with_js) if row else None
+    return entry_row_to_dict(row, with_js, with_module) if row else None
 
 
 def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
                  description: str = "", version: str = "v1",
-                 has_behavior: int = 1) -> dict:
+                 has_behavior: int = 1, page_module: str = "") -> dict:
     """新建条目：校验命名 → 生成 slug → 插入。slug 为空时以 entry-<id> 落定。"""
     if not collect_js.strip():
         raise NameValidationError("collect_js 不能为空")
@@ -88,10 +96,10 @@ def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
     ts = now_iso()
     cur = conn.execute(
         "INSERT INTO entries (slug, name, risk_type, website, description, collect_js, version,"
-        " has_behavior, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " has_behavior, page_module, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (slug, name, risk_type, website, description.strip(), collect_js, version,
-         int(has_behavior), ts, ts),
+         int(has_behavior), page_module or "", ts, ts),
     )
     if slug.startswith("pending-"):
         slug = f"entry-{cur.lastrowid}"
@@ -102,7 +110,8 @@ def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
 
 def update_entry(conn: sqlite3.Connection, slug: str, *, name: str | None = None,
                  collect_js: str | None = None, description: str | None = None,
-                 version: str | None = None, has_behavior: int | None = None) -> dict | None:
+                 version: str | None = None, has_behavior: int | None = None,
+                 page_module: str | None = None) -> dict | None:
     """编辑条目：支持部分更新；改 name 时同步 risk_type/website。"""
     row = conn.execute("SELECT * FROM entries WHERE slug = ?", (slug,)).fetchone()
     if row is None:
@@ -114,17 +123,18 @@ def update_entry(conn: sqlite3.Connection, slug: str, *, name: str | None = None
         raise NameValidationError("collect_js 不能为空")
     conn.execute(
         "UPDATE entries SET name = ?, risk_type = ?, website = ?, collect_js = ?, description = ?,"
-        " version = ?, has_behavior = ?, updated_at = ? WHERE id = ?",
+        " version = ?, has_behavior = ?, page_module = ?, updated_at = ? WHERE id = ?",
         (
             new_name, risk_type, website, new_js,
             description if description is not None else row["description"],
             version if version is not None else row["version"],
             int(has_behavior) if has_behavior is not None else row["has_behavior"],
+            page_module if page_module is not None else row["page_module"],
             now_iso(), row["id"],
         ),
     )
     conn.commit()
-    return get_entry(conn, slug, with_js=True)
+    return get_entry(conn, slug, with_js=True, with_module=True)
 
 
 def delete_entry(conn: sqlite3.Connection, slug: str) -> bool:

@@ -59,3 +59,26 @@ def render_collect_page(entry_name: str, slug: str, collect_js: str) -> HTMLResp
 </html>
 """
     return HTMLResponse(html_text)
+
+
+def render_page_module(entry_name: str, slug: str, module_html: str) -> HTMLResponse:
+    """渲染条目级复刻页面模块（行为剧本页）。
+
+    模块是完整 HTML 文档；平台在 </head>（或文档开头）自动注入行为采集基础层：
+    behavior-core.js + page-behavior.js + 条目配置。模块作者无需手动引用。
+    模块脚本通过 window.__fpBehavior 挂钩采集器（详见 docs/page-module-contract.md）。
+    """
+    safe_slug = html.escape(slug)
+    inject_block = (
+        '<script src="/static/js/behavior-core.js"></script>\n'
+        '<script>window.__FP_ENTRY_SLUG = "' + safe_slug + '";\n'
+        'window.__FP_ENTRY_NAME = "' + html.escape(entry_name) + '";</script>\n'
+        '<script src="/static/js/page-behavior.js"></script>\n'
+    )
+    # 注入到 </head> 前：采集层必须先于模块剧本 script 执行（剧本依赖 __fpBehavior）；
+    # page-behavior 的悬浮条挂载有 body 就绪防御（mountBar 重试）。
+    if "</head>" in module_html:
+        rendered = module_html.replace("</head>", inject_block + "</head>", 1)
+    else:
+        rendered = inject_block + module_html
+    return HTMLResponse(rendered)

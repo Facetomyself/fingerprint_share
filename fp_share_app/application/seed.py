@@ -29,6 +29,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "collect_js/datadome-5.9.0-radwell.js",
         "has_behavior": 1,
+        "page_module_file": "page_modules/datadome-challenge-radwell.html",
     },
     {
         "slug": "ruishu-rs6-electricity",
@@ -86,10 +87,18 @@ def seed_entries(conn: sqlite3.Connection, project_root: Path) -> dict:
             skipped.append(str(js_path))
             continue
         collect_js = js_path.read_text(encoding="utf-8")
+        page_module = ""
+        module_file = spec.get("page_module_file")
+        if module_file:
+            module_path = project_root / module_file
+            if not module_path.is_file():
+                skipped.append(str(module_path))
+                continue
+            page_module = module_path.read_text(encoding="utf-8")
         entry = create_entry(
             conn, spec["name"], collect_js,
             description=spec["description"], version=spec["version"],
-            has_behavior=spec.get("has_behavior", 1),
+            has_behavior=spec.get("has_behavior", 1), page_module=page_module,
         )
         # 种子条目使用固定 slug，覆盖自动生成的 slug
         conn.execute("UPDATE entries SET slug = ? WHERE id = ?", (spec["slug"], entry["id"]))

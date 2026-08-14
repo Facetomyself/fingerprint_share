@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from ..application import collections as collections_uc
 from ..application import entries as entries_uc
 from ..config.settings import PROJECT_ROOT, get_settings
-from .collect_page import render_collect_page
+from .collect_page import render_collect_page, render_page_module
 from .deps import get_db
 
 router = APIRouter()
@@ -57,11 +57,15 @@ def page_collect(slug: str, conn: sqlite3.Connection = Depends(get_db)):
 
 @router.get("/collect/{slug}/behavior")
 def page_collect_behavior(slug: str, conn: sqlite3.Connection = Depends(get_db)):
-    entry = entries_uc.get_entry(conn, slug, with_js=False)
+    entry = entries_uc.get_entry(conn, slug, with_js=False, with_module=True)
     if entry is None:
         raise HTTPException(status_code=404, detail="条目不存在")
     if not entry.get("has_behavior"):
         raise HTTPException(status_code=404, detail="该风控无行为指纹面（无证据依据），不提供行为采集页")
+    module = (entry.get("page_module") or "").strip()
+    if module:
+        # 条目级复刻页面模块（行为剧本页）：渲染模块并注入平台行为采集基础层
+        return render_page_module(entry["name"], entry["slug"], module)
     return FileResponse(STATIC_DIR / "behavior.html")
 
 

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS entries (
     collect_js   TEXT NOT NULL,
     version      TEXT NOT NULL DEFAULT 'v1',
     has_behavior INTEGER NOT NULL DEFAULT 1 CHECK (has_behavior IN (0, 1)),
+    page_module  TEXT NOT NULL DEFAULT '',
     created_at   TEXT NOT NULL,
     updated_at   TEXT NOT NULL
 );

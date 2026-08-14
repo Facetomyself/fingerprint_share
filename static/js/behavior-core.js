@@ -385,7 +385,9 @@
   function buildTrajectory(events, maxPoints) {
     var sampled = downsample(events, maxPoints);
     var points = sampled.map(function (e) {
-      return { t: Math.round(e.t), x: Math.round(e.x), y: Math.round(e.y), ty: e.ty };
+      var p = { t: Math.round(e.t), x: Math.round(e.x), y: Math.round(e.y), ty: e.ty };
+      if (e.el) { p.el = e.el; }
+      return p;
     });
     var firstT = events.length ? events[0].t : 0;
     var lastT = events.length ? events[events.length - 1].t : 0;
