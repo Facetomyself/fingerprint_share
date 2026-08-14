@@ -179,7 +179,10 @@
       return fetchJson('/api/collections?entry_id=' + e.id + '&page=1')
         .then(function (d) { e.recordCount = d.total; return { name: e.name, total: d.total }; })
         .catch(function () { return { name: e.name, total: 0 }; });
-    })).then(renderStats);
+    })).then(function (rows) {
+      renderStats(rows);
+      renderGrid(); // 记录数返回后重渲染卡片封面角标
+    });
   }
 
   searchInput.addEventListener('input', function () {
