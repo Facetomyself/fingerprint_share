@@ -39,7 +39,8 @@ def render_collect_page(entry_name: str, slug: str, collect_js: str) -> HTMLResp
     <p class="hero-sub">环境指纹采集 · 条目 <code>{safe_slug}</code> · 脚本自动运行并上报</p>
   </div>
   <div class="banner">
-    此页面将采集你的浏览器环境指纹并存储与共享。仅用于风控研究对照，请勿在隐私敏感环境打开。
+    本页面将采集您的浏览器环境指纹并存储至共享数据库。该数据仅用于风控研究对照分析，
+    请勿在包含隐私信息的环境中访问本页面。
   </div>
   <div class="section">
     <div id="fp-status" class="status">正在采集环境指纹...</div>

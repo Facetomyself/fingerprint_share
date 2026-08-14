@@ -10,17 +10,23 @@
 <header class="topnav">
   <div class="container">
     <span class="brand">指纹共享平台</span>
-    <a href="/">导航</a>
-    <a href="/admin/">后台</a>
+    <a href="/">浏览</a>
+    <a href="/admin/">管理后台</a>
   </div>
 </header>
 <main class="container">
   <div class="hero">
     <h1>指纹共享平台</h1>
-    <p class="hero-sub">按「风控类型-网站」分组的指纹采集条目。环境指纹与行为指纹分页采集，采集数据公开共享。</p>
-    <div class="hero-stats" id="hero-stats"></div>
+    <p class="hero-sub">浏览器环境与行为指纹采集共享平台。按风控类型组织的采集插件、行为剧本与指纹数据库，面向逆向研究与风控对照分析。</p>
+    <div class="hero-search">
+      <input id="search-input" type="text" placeholder="搜索风控类型、网站或指纹特征...">
+    </div>
+    <div class="stat-row" id="stat-row"></div>
   </div>
-  <div id="entries-root">
+
+  <div class="filter-chips" id="filter-chips"></div>
+
+  <div class="card-grid" id="entries-root">
     <div class="status">正在加载条目...</div>
   </div>
 </main>
@@ -29,63 +35,161 @@
 (function () {
   'use strict';
   var root = document.getElementById('entries-root');
+  var chipsRoot = document.getElementById('filter-chips');
+  var statRow = document.getElementById('stat-row');
+  var searchInput = document.getElementById('search-input');
 
-  function renderEntries(entries) {
-    if (!entries.length) {
-      root.innerHTML = '<div class="status">暂无条目。请从<a href="/admin/">后台</a>上传采集脚本。</div>';
+  var allEntries = [];
+  var activeFilter = 'all';
+  var searchTerm = '';
+
+  // 风控类型配色（封面渐变与标识色）
+  var RISK_COLORS = {
+    '通用': { c1: '#3a3a4a', c2: '#23232e' },
+    'DataDome': { c1: '#c2541c', c2: '#7a2f10' },
+    '瑞数6': { c1: '#b3261e', c2: '#6e130d' },
+    '飞林': { c1: '#0e7490', c2: '#0a4557' },
+    'Imperva': { c1: '#7c5cbf', c2: '#4a3382' },
+    'BOSS': { c1: '#1e8a4c', c2: '#0f5c30' }
+  };
+
+  // 标准标签：常用标签可在下方预设中增删（全部/行为面/仅环境面/各风控类型）
+  function buildChips() {
+    var chips = [{ key: 'all', label: '全部' }];
+    chips.push({ key: 'behavior', label: '含行为剧本' });
+    chips.push({ key: 'env-only', label: '仅环境面' });
+    var riskTypes = {};
+    allEntries.forEach(function (e) { riskTypes[e.risk_type] = true; });
+    Object.keys(riskTypes).sort().forEach(function (rt) {
+      chips.push({ key: 'risk:' + rt, label: rt });
+    });
+    chipsRoot.innerHTML = '';
+    chips.forEach(function (c) {
+      var btn = document.createElement('button');
+      btn.className = 'chip' + (activeFilter === c.key ? ' active' : '');
+      btn.textContent = c.label;
+      btn.addEventListener('click', function () {
+        activeFilter = c.key;
+        Array.prototype.forEach.call(chipsRoot.querySelectorAll('.chip'), function (b) {
+          b.className = 'chip' + (b.textContent === c.label ? ' active' : '');
+        });
+        renderGrid();
+      });
+      chipsRoot.appendChild(btn);
+    });
+  }
+
+  function matchesFilter(e) {
+    if (activeFilter === 'all') { return true; }
+    if (activeFilter === 'behavior') { return !!e.has_behavior; }
+    if (activeFilter === 'env-only') { return !e.has_behavior; }
+    if (activeFilter.indexOf('risk:') === 0) {
+      return e.risk_type === activeFilter.slice(5);
+    }
+    return true;
+  }
+
+  function matchesSearch(e) {
+    if (!searchTerm) { return true; }
+    var haystack = (e.name + ' ' + e.risk_type + ' ' + e.website + ' ' + e.description).toLowerCase();
+    return haystack.indexOf(searchTerm.toLowerCase()) >= 0;
+  }
+
+  function coverGlyph(riskType) {
+    // 封面视觉符号：纯 CSS 图形（无 emoji），按风控类型差异化
+    var shapes = {
+      '通用': 'circle', 'DataDome': 'diamond', '瑞数6': 'hex', '飞林': 'bars',
+      'Imperva': 'shield', 'BOSS': 'square'
+    };
+    return shapes[riskType] || 'circle';
+  }
+
+  function renderCoverGlyph(glyph) {
+    var common = 'display:block;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.9;';
+    if (glyph === 'diamond') {
+      return '<span style="' + common + 'width:34px;height:34px;background:rgba(255,255,255,0.28);transform:translate(-50%,-50%) rotate(45deg);border-radius:6px;"></span>';
+    }
+    if (glyph === 'hex') {
+      return '<span style="' + common + 'width:36px;height:36px;background:rgba(255,255,255,0.28);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);"></span>';
+    }
+    if (glyph === 'bars') {
+      return '<span style="' + common + 'display:flex;gap:4px;align-items:flex-end;height:36px;">' +
+        '<span style="width:6px;height:18px;background:rgba(255,255,255,0.3);border-radius:2px;"></span>' +
+        '<span style="width:6px;height:30px;background:rgba(255,255,255,0.3);border-radius:2px;"></span>' +
+        '<span style="width:6px;height:24px;background:rgba(255,255,255,0.3);border-radius:2px;"></span></span>';
+    }
+    if (glyph === 'shield') {
+      return '<span style="' + common + 'width:34px;height:38px;background:rgba(255,255,255,0.28);clip-path:polygon(50% 0%,100% 18%,88% 62%,50% 100%,12% 62%,0% 18%);"></span>';
+    }
+    if (glyph === 'square') {
+      return '<span style="' + common + 'width:32px;height:32px;background:rgba(255,255,255,0.28);border-radius:8px;"></span>';
+    }
+    return '<span style="' + common + 'width:36px;height:36px;background:rgba(255,255,255,0.28);border-radius:50%;"></span>';
+  }
+
+  function renderGrid() {
+    var filtered = allEntries.filter(matchesFilter).filter(matchesSearch);
+    if (!filtered.length) {
+      root.innerHTML = '<div class="status">没有符合条件的条目。请调整筛选条件或从<a href="/admin/">管理后台</a>创建条目。</div>';
       return;
     }
-    var groups = groupBy(entries, function (e) { return e.risk_type; });
-    var RISK_COLORS = {
-      '通用': '#8c8c9c', 'DataDome': '#fb923c', '瑞数6': '#ff453a', '飞林': '#22d3ee',
-      'Imperva': '#a78bfa', 'BOSS': '#30d158'
-    };
     var html = '';
-    Object.keys(groups).sort().forEach(function (riskType) {
-      var color = RISK_COLORS[riskType] || '#0a84ff';
-      html += '<h2 class="group-header" style="--group-color:' + color + ';">' + escapeHtml(riskType) + '</h2>';
-      groups[riskType].forEach(function (e) {
-        var behaviorLink = e.has_behavior
-          ? '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>'
-          : '<span class="badge" title="该风控无行为指纹面证据，不提供行为采集">仅环境面</span>';
-        html += '<div class="entry-card">' +
-          '<div class="title">' + escapeHtml(e.name) + '</div>' +
-          '<div class="desc">' + escapeHtml(e.description || '（无描述）') +
-          ' <span class="muted">v' + escapeHtml(e.version) + '</span></div>' +
-          '<div class="actions">' +
-          '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境采集页</a>' +
-          behaviorLink +
-          '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '/fingerprints">浏览指纹</a>' +
-          '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '">详情</a>' +
-          '</div></div>';
-      });
+    filtered.forEach(function (e) {
+      var color = RISK_COLORS[e.risk_type] || { c1: '#3a3a4a', c2: '#23232e' };
+      var tags = '<span class="mini-tag">' + escapeHtml(e.risk_type) + '</span>' +
+        (e.has_behavior
+          ? '<span class="mini-tag tag-green">行为剧本</span>'
+          : '<span class="mini-tag tag-muted">仅环境面</span>');
+      html += '<div class="risk-card" style="--risk-c1:' + color.c1 + ';--risk-c2:' + color.c2 + ';">' +
+        '<a class="card-cover" href="/e/' + encodeURIComponent(e.slug) + '">' +
+        renderCoverGlyph(coverGlyph(e.risk_type)) +
+        '<span class="cover-count">' + (e.recordCount || 0) + ' 条记录</span>' +
+        '</a>' +
+        '<div class="card-body">' +
+        '<a class="card-title" href="/e/' + encodeURIComponent(e.slug) + '">' + escapeHtml(e.name) + '</a>' +
+        '<div class="card-tags">' + tags + '</div>' +
+        '<p class="card-desc">' + escapeHtml((e.description || '暂无描述').slice(0, 72)) + (e.description && e.description.length > 72 ? '...' : '') + '</p>' +
+        '<div class="card-actions">' +
+        '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境采集</a>' +
+        (e.has_behavior
+          ? '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为剧本</a>'
+          : '') +
+        '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '/fingerprints">指纹数据</a>' +
+        '</div></div></div>';
     });
     root.innerHTML = html;
   }
 
-  function renderHeroStats(entries) {
-    var statsEl = document.getElementById('hero-stats');
-    var promises = entries.map(function (e) {
-      return fetchJson('/api/collections?entry_id=' + e.id + '&page=1').then(function (d) {
-        return { name: e.name, total: d.total, slug: e.slug };
-      }).catch(function () {
-        return { name: e.name, total: 0, slug: e.slug };
-      });
+  function renderStats(rows) {
+    var totalRecords = rows.reduce(function (acc, r) { return acc + r.total; }, 0);
+    var html = '<span class="stat-chip">条目 <strong>' + allEntries.length + '</strong></span>' +
+      '<span class="stat-chip">采集记录 <strong>' + totalRecords + '</strong></span>' +
+      '<span class="stat-chip">含行为剧本 <strong>' +
+      allEntries.filter(function (e) { return e.has_behavior; }).length + '</strong></span>';
+    rows.forEach(function (r) {
+      html += '<span class="stat-chip">' + escapeHtml(r.name) + ' <strong>' + r.total + '</strong></span>';
     });
-    Promise.all(promises).then(function (rows) {
-      var total = rows.reduce(function (acc, r) { return acc + r.total; }, 0);
-      var html = '<span class="stat-chip">条目 ' + entries.length + '</span>' +
-        '<span class="stat-chip">采集记录 ' + total + '</span>';
-      rows.forEach(function (r) {
-        html += '<span class="stat-chip">' + escapeHtml(r.name) + ' ' + r.total + '</span>';
-      });
-      statsEl.innerHTML = html;
-    });
+    statRow.innerHTML = html;
   }
 
+  function loadStats() {
+    Promise.all(allEntries.map(function (e) {
+      return fetchJson('/api/collections?entry_id=' + e.id + '&page=1')
+        .then(function (d) { e.recordCount = d.total; return { name: e.name, total: d.total }; })
+        .catch(function () { return { name: e.name, total: 0 }; });
+    })).then(renderStats);
+  }
+
+  searchInput.addEventListener('input', function () {
+    searchTerm = searchInput.value.trim();
+    renderGrid();
+  });
+
   fetchJson('/api/entries').then(function (entries) {
-    renderEntries(entries);
-    renderHeroStats(entries);
+    allEntries = entries;
+    buildChips();
+    renderGrid();
+    loadStats();
   }).catch(function (err) {
     root.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
   });

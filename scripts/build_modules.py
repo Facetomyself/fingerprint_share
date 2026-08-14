@@ -28,12 +28,12 @@ MODULES_DIR = PROJECT_ROOT / "modules"
 COLLECT_JS_DIR = PROJECT_ROOT / "collect_js"
 PAGE_MODULES_DIR = PROJECT_ROOT / "page_modules"
 
-NOTICE_TEXT = """1. 采集页面将采集你的浏览器环境/行为指纹并存储与共享，仅用于风控研究对照，
-   请勿在隐私敏感环境使用。
-2. 采集数据在平台内公开共享；带出平台时按 restricted-local 纪律执行：
-   环境数据只允许脱敏摘要（组件名/哈希/维度计数）；行为轨迹与击键间隔原值
-   一律不得输出，只允许信号判定摘要与统计值。
-3. 采集脚本仅管理员本人编写维护，请勿引入第三方来源代码。"""
+NOTICE_TEXT = """1. 采集页面将采集您的浏览器环境/行为指纹并存储至共享数据库。该数据仅用于
+   风控研究对照分析，请勿在包含隐私信息的环境中访问。
+2. 采集数据在本平台内公开共享。将数据带出平台时，须遵守 restricted-local
+   数据分级纪律：环境数据仅允许输出脱敏摘要（组件名、哈希、维度计数）；
+   行为轨迹与击键间隔原值不得输出，仅允许信号判定摘要与统计值。
+3. 采集脚本由平台管理员编写与维护，请勿引入第三方来源代码。"""
 
 INFO_TEMPLATE = """<!doctype html>
 <html lang="zh-CN">
@@ -113,7 +113,8 @@ COLLECT_TEMPLATE = """<!doctype html>
     <p class="hero-sub">环境指纹采集 · 采集脚本 <code>collect.js</code> 集成在本插件中 · 自动运行并上报</p>
   </div>
   <div class="banner">
-    此页面将采集你的浏览器环境指纹并存储与共享。仅用于风控研究对照，请勿在隐私敏感环境打开。
+    本页面将采集您的浏览器环境指纹并存储至共享数据库。该数据仅用于风控研究对照分析，
+    请勿在包含隐私信息的环境中访问本页面。
   </div>
   <div class="section">
     <div id="fp-status" class="status">正在采集环境指纹...</div>
@@ -253,24 +254,13 @@ def build_module(spec: dict) -> dict:
     # 2. 环境采集页
     (out_dir / "collect.html").write_text(render(COLLECT_TEMPLATE, values), encoding="utf-8")
 
-    # 3. 采集脚本迁移（collect_js/<file>.js -> modules/<slug>/collect.js）
-    collect_src = COLLECT_JS_DIR / spec["js_file"].split("/")[-1]
-    if not collect_src.is_file():
-        raise FileNotFoundError(f"collect_js missing: {collect_src}")
-    (out_dir / "collect.js").write_text(collect_src.read_text(encoding="utf-8"), encoding="utf-8")
-
-    # 4. 行为剧本页迁移（page_modules/<file>.html -> modules/<slug>/challenge.html）
-    if has_behavior:
-        if module_file:
-            module_src = PAGE_MODULES_DIR / module_file.split("/")[-1]
-            if not module_src.is_file():
-                raise FileNotFoundError(f"page_module missing: {module_src}")
-            (out_dir / "challenge.html").write_text(
-                module_src.read_text(encoding="utf-8"), encoding="utf-8")
-        else:
-            # 通用条目：通用行为采集页（简化演示页）
-            (out_dir / "challenge.html").write_text(
-                render(GENERIC_CHALLENGE_TEMPLATE, values), encoding="utf-8")
+    # 3. 采集脚本与行为剧本页：已在 modules/<slug>/ 内原地维护（迁移完成），
+    #    生成器不覆盖，只校验存在
+    collect_target = out_dir / "collect.js"
+    if not collect_target.is_file():
+        raise FileNotFoundError(f"collect.js missing: {collect_target}")
+    if has_behavior and not (out_dir / "challenge.html").is_file():
+        raise FileNotFoundError(f"challenge.html missing: {out_dir / 'challenge.html'}")
 
     # 5. README
     (out_dir / "README.md").write_text(render(README_TEMPLATE, values), encoding="utf-8")
