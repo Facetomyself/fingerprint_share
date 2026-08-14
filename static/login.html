@@ -32,12 +32,12 @@
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
-    var password = document.getElementById('password').value;
+    var pw = document.getElementById('password').value;
     statusEl.className = 'hidden';
     fetchJson('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: password })
+      body: JSON.stringify({ password: pw })
     }).then(function () {
       location.href = '/admin/';
     }).catch(function (err) {

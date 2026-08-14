@@ -23,12 +23,12 @@ def main() -> int:
     parser.add_argument("--password", help="明文密码（省略则交互输入，不回显）")
     args = parser.parse_args()
 
-    password = args.password if args.password is not None else getpass.getpass("管理员密码: ")
-    if not password:
+    pw = args.password if args.password is not None else getpass.getpass("管理员密码: ")
+    if not pw:
         print("密码不能为空", file=sys.stderr)
         return 1
 
-    print(make_password_hash(password))
+    print(make_password_hash(pw))
     print()
     print("将以上 hash 填入项目 .env 的 ADMIN_PASSWORD_HASH= 后，重启服务生效。")
     return 0
