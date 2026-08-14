@@ -6,7 +6,10 @@ import json
 import re
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+# 平台统一时区：Asia/Shanghai（固定 +08:00，无夏令时）
+SHANGHAI_TZ = timezone(timedelta(hours=8))
 
 # 命名白名单：大小写字母、数字、中文、点、下划线、连字符
 NAME_RE = re.compile(r"^[A-Za-z0-9一-鿿._-]+$")
@@ -17,7 +20,7 @@ class NameValidationError(ValueError):
 
 
 def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(SHANGHAI_TZ).isoformat()
 
 
 def parse_name(name: str) -> tuple[str, str]:

@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -125,6 +126,7 @@ COLLECT_TEMPLATE = """<!doctype html>
     <a class="btn" href="/">返回导航</a>
   </div>
 </main>
+<script>window.__FP_EXPECTED_SCRIPTS = __EXPECTED_SCRIPTS__;</script>
 <script src="/static/js/collector.js"></script>
 <script src="/modules/__SLUG__/collect.js"></script>
 __GENERIC_SCRIPT__
@@ -273,6 +275,13 @@ PARAM_DESCRIPTIONS = {
 }
 
 PARAM_FALLBACK = ("环境探测参数", "采集环境特征数据，用于指纹对照与一致性分析。")
+
+
+def extract_script_names(collect_js: str) -> list[str]:
+    """提取采集脚本的 SCRIPT 常量（组合采集聚合清单用）。"""
+    import re
+    m = re.search(r"var SCRIPT\s*=\s*'([^']+)'", collect_js)
+    return [m.group(1)] if m else []
 
 
 def extract_params(collect_js: str) -> list[str]:
@@ -429,16 +438,20 @@ def build_module(spec: dict) -> dict:
     # 组合采集：非通用条目附加通用深度脚本（风控条目 = 专有面 + 通用深度面）
     generic_script = ""
     combined_js = collect_js_content
+    expected_scripts = extract_script_names(collect_js_content)
     if slug != "generic-deep-v3":
         generic_path = MODULES_DIR / "generic-deep-v3" / "collect.js"
         if generic_path.is_file():
             generic_script = f'<script src="/modules/generic-deep-v3/collect.js"></script>\n'
-            combined_js = collect_js_content + "\n" + generic_path.read_text(encoding="utf-8")
+            generic_js = generic_path.read_text(encoding="utf-8")
+            combined_js = collect_js_content + "\n" + generic_js
+            expected_scripts += extract_script_names(generic_js)
     values = {
         "SLUG": slug, "NAME": name, "RISK_TYPE": risk_type, "WEBSITE": website,
         "DESCRIPTION": spec["description"],
         "TAGS_HTML": tags_html,
         "GENERIC_SCRIPT": generic_script,
+        "EXPECTED_SCRIPTS": json.dumps(expected_scripts),
         "PARAM_ROWS": build_param_rows(combined_js),
         "PARAM_DETAILS": build_param_details(combined_js),
         "BEHAVIOR_BUTTON": behavior_button,

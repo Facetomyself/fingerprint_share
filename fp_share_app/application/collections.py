@@ -7,6 +7,8 @@ import re
 import sqlite3
 from datetime import datetime, timezone
 
+from .entries import SHANGHAI_TZ, now_iso as entry_now_iso
+
 PAGE_SIZE = 50
 
 SUMMARY_KEYS = ["id", "entry_id", "kind", "collected_at", "visitor_ip", "user_agent", "summary", "duration_ms"]
@@ -137,7 +139,7 @@ def ingest(conn: sqlite3.Connection, entry_slug: str, payload: dict,
         (
             row["id"],
             kind,
-            datetime.now(timezone.utc).isoformat(),
+            datetime.now(SHANGHAI_TZ).isoformat(),
             visitor_ip,
             user_agent,
             json.dumps(payload, ensure_ascii=False),
@@ -267,7 +269,7 @@ def export_collections(conn: sqlite3.Connection, entry_id: int | None = None,
             "duration_ms": row["duration_ms"],
         })
     return {
-        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "exported_at": datetime.now(SHANGHAI_TZ).isoformat(),
         "entry_id": entry_id,
         "kind": kind,
         "count": len(records),

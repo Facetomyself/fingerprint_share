@@ -16,6 +16,11 @@
   var pendingPayloads = [];
   var flushTimer = null;
   var statusEl = document.getElementById('fp-status');
+  // 组合采集预期脚本清单（由采集页注入）：收齐后立即聚合上报；
+  // 未配置时按 600ms 窗口；首提交后 10s 未收齐也强制上报已收到的。
+  var expectedScripts = window.__FP_EXPECTED_SCRIPTS || null;
+  var firstSubmitAt = null;
+  var forcedAt = null;
 
   function setStatus(text, isError) {
     if (statusEl) {
@@ -77,6 +82,7 @@
     var merged = mergePayloads(pendingPayloads);
     pendingPayloads = [];
     if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+    if (forcedAt) { clearTimeout(forcedAt); forcedAt = null; }
 
     var dims = Object.keys(merged.components).filter(function (k) {
       return merged.components[k] !== null && merged.components[k] !== undefined;
@@ -119,11 +125,26 @@
       setStatus('提交失败：payload 必须是对象', true);
       return;
     }
+    if (firstSubmitAt === null) {
+      firstSubmitAt = Date.now();
+      // 首提交后 10s 兜底：无论是否收齐预期脚本，强制上报已收到的
+      forcedAt = setTimeout(flush, 10000);
+    }
     pendingPayloads.push(payload);
-    // 聚合窗口：等待其他脚本的提交（组合采集）
-    if (flushTimer) { clearTimeout(flushTimer); }
-    flushTimer = setTimeout(flush, 600);
-    setStatus('收到采集脚本 ' + (payload.script || 'unknown') + ' 的提交，聚合中...');
+    var receivedNames = pendingPayloads.map(function (p) { return p.script; });
+    var complete = expectedScripts &&
+      expectedScripts.every(function (s) { return receivedNames.indexOf(s) >= 0; });
+    setStatus('收到采集脚本 ' + (payload.script || 'unknown') + ' 的提交' +
+      (expectedScripts
+        ? '（' + receivedNames.length + '/' + expectedScripts.length + '）'
+        : '') + (complete ? '，全部就绪，正在上报...' : '，等待其余脚本...'));
+    if (complete) {
+      flush();
+    } else if (!expectedScripts) {
+      // 未配置清单：600ms 聚合窗口
+      if (flushTimer) { clearTimeout(flushTimer); }
+      flushTimer = setTimeout(flush, 600);
+    }
   };
 
   window.__fp_ready = true;
