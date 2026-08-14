@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>指纹数据 - 指纹共享平台</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+    <a href="/admin/">后台</a>
+  </div>
+</header>
+<main class="container">
+  <h1>指纹数据浏览</h1>
+  <p class="muted">平台内公开共享。带出平台（报告/仓库/外部）时按 restricted-local 纪律执行：只允许脱敏摘要，不得输出原值。</p>
+
+  <div class="section">
+    <label for="entry-select">条目</label>
+    <select id="entry-select"><option value="">全部条目</option></select>
+    <div class="actions" style="margin-top:10px;">
+      <button id="export-btn" class="secondary">导出当前条目 JSON</button>
+    </div>
+  </div>
+
+  <div id="list-root"><div class="status">正在加载...</div></div>
+  <div class="pager" id="pager"></div>
+  <div id="detail-root"></div>
+</main>
+<script src="/static/js/common.js"></script>
+<script>
+(function () {
+  'use strict';
+  var state = { entryId: null, page: 1 };
+
+  var selectEl = document.getElementById('entry-select');
+  var listRoot = document.getElementById('list-root');
+  var pagerRoot = document.getElementById('pager');
+  var detailRoot = document.getElementById('detail-root');
+  var exportBtn = document.getElementById('export-btn');
+
+  var initialEntry = queryParam('entry');
+
+  function loadEntries() {
+    return fetchJson('/api/entries').then(function (entries) {
+      entries.forEach(function (e) {
+        var opt = document.createElement('option');
+        opt.value = String(e.id);
+        opt.textContent = e.name;
+        if (initialEntry && e.slug === initialEntry) { opt.selected = true; }
+        selectEl.appendChild(opt);
+      });
+      state.entryId = selectEl.value ? Number(selectEl.value) : null;
+    });
+  }
+
+  function loadPage() {
+    listRoot.innerHTML = '<div class="status">正在加载...</div>';
+    var url = '/api/collections?page=' + state.page;
+    if (state.entryId !== null) { url += '&entry_id=' + state.entryId; }
+    return fetchJson(url).then(function (data) {
+      if (!data.items.length) {
+        listRoot.innerHTML = '<div class="status">暂无采集记录。打开<a href="/collect/' +
+          (initialEntry ? encodeURIComponent(initialEntry) : '') + '">采集页</a>产生数据。</div>';
+        pagerRoot.innerHTML = '';
+        return;
+      }
+      var html = '<table><tr><th>ID</th><th>时间 (UTC)</th><th>visitorId</th>' +
+        '<th>维度</th><th>耗时</th><th>IP</th><th>操作</th></tr>';
+      data.items.forEach(function (r) {
+        var summary = null;
+        try { summary = JSON.parse(r.summary); } catch (e) { summary = null; }
+        var visitorId = summary && summary.visitorId ? summary.visitorId.slice(0, 16) + '...' : '-';
+        var dims = summary && summary.dimensions !== undefined ? summary.dimensions : '-';
+        var errors = summary && summary.errors && summary.errors.length ? ('，错误 ' + summary.errors.length) : '';
+        html += '<tr><td>' + r.id + '</td>' +
+          '<td>' + escapeHtml(shortTime(r.collected_at)) + '</td>' +
+          '<td>' + escapeHtml(visitorId) + '</td>' +
+          '<td>' + dims + escapeHtml(errors) + '</td>' +
+          '<td>' + (r.duration_ms === null ? '-' : r.duration_ms + 'ms') + '</td>' +
+          '<td>' + escapeHtml(r.visitor_ip || '-') + '</td>' +
+          '<td><a href="#" data-id="' + r.id + '" class="detail-link">详情</a></td></tr>';
+      });
+      html += '</table>';
+      listRoot.innerHTML = html;
+
+      var totalPages = Math.max(1, Math.ceil(data.total / data.page_size));
+      pagerRoot.innerHTML = '<span>共 ' + data.total + ' 条，第 ' + state.page + '/' + totalPages + ' 页</span>' +
+        (state.page > 1 ? '<button class="secondary" id="prev-btn">上一页</button>' : '') +
+        (state.page < totalPages ? '<button class="secondary" id="next-btn">下一页</button>' : '');
+      var prevBtn = document.getElementById('prev-btn');
+      var nextBtn = document.getElementById('next-btn');
+      if (prevBtn) { prevBtn.onclick = function () { state.page -= 1; loadPage(); }; }
+      if (nextBtn) { nextBtn.onclick = function () { state.page += 1; loadPage(); }; }
+
+      Array.prototype.forEach.call(listRoot.querySelectorAll('.detail-link'), function (link) {
+        link.onclick = function (ev) {
+          ev.preventDefault();
+          loadDetail(Number(link.getAttribute('data-id')));
+        };
+      });
+    });
+  }
+
+  function loadDetail(id) {
+    detailRoot.innerHTML = '<div class="status">正在加载记录 #' + id + '...</div>';
+    fetchJson('/api/collections/' + id).then(function (r) {
+      detailRoot.innerHTML =
+        '<div class="section"><h2>记录 #' + r.id + '</h2>' +
+        '<p class="muted">时间: ' + escapeHtml(shortTime(r.collected_at)) +
+        ' | IP: ' + escapeHtml(r.visitor_ip || '-') +
+        ' | UA: ' + escapeHtml(r.user_agent || '-') + '</p>' +
+        '<pre class="payload">' + escapeHtml(JSON.stringify(r.payload, null, 2)) + '</pre>' +
+        '<div class="actions"><button class="secondary" id="close-detail">收起</button></div></div>';
+      document.getElementById('close-detail').onclick = function () {
+        detailRoot.innerHTML = '';
+      };
+    }).catch(function (err) {
+      detailRoot.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
+    });
+  }
+
+  selectEl.addEventListener('change', function () {
+    state.entryId = selectEl.value ? Number(selectEl.value) : null;
+    state.page = 1;
+    detailRoot.innerHTML = '';
+    loadPage();
+  });
+
+  exportBtn.addEventListener('click', function () {
+    var url = '/api/export';
+    if (state.entryId !== null) { url += '?entry_id=' + state.entryId; }
+    location.href = url;
+  });
+
+  loadEntries().then(loadPage).catch(function (err) {
+    listRoot.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>指纹共享平台</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+    <a href="/admin/">后台</a>
+  </div>
+</header>
+<main class="container">
+  <h1>指纹共享平台</h1>
+  <p class="muted">按「风控类型-网站」分组的指纹采集条目。采集脚本与采集到的指纹数据均公开共享。</p>
+  <div id="entries-root">
+    <div class="status">正在加载条目...</div>
+  </div>
+</main>
+<script src="/static/js/common.js"></script>
+<script>
+(function () {
+  'use strict';
+  var root = document.getElementById('entries-root');
+
+  function renderEntries(entries) {
+    if (!entries.length) {
+      root.innerHTML = '<div class="status">暂无条目。请从<a href="/admin/">后台</a>上传采集脚本。</div>';
+      return;
+    }
+    var groups = groupBy(entries, function (e) { return e.risk_type; });
+    var html = '';
+    Object.keys(groups).sort().forEach(function (riskType) {
+      html += '<h2 class="group-header">' + escapeHtml(riskType) + '</h2>';
+      groups[riskType].forEach(function (e) {
+        html += '<div class="entry-card">' +
+          '<div class="title">' + escapeHtml(e.name) + '</div>' +
+          '<div class="desc">' + escapeHtml(e.description || '（无描述）') +
+          ' <span class="muted">v' + escapeHtml(e.version) + '</span></div>' +
+          '<div class="actions">' +
+          '<a href="/e/' + encodeURIComponent(e.slug) + '">详情</a>' +
+          '<a href="/collect/' + encodeURIComponent(e.slug) + '">采集页</a>' +
+          '<a href="/dl/' + encodeURIComponent(e.slug) + '.js">下载脚本</a>' +
+          '<a href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹</a>' +
+          '</div></div>';
+      });
+    });
+    root.innerHTML = html;
+  }
+
+  fetchJson('/api/entries').then(renderEntries).catch(function (err) {
+    root.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

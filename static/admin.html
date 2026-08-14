@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后台管理 - 指纹共享平台</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+    <a href="#" id="logout-link">退出登录</a>
+  </div>
+</header>
+<main class="container">
+  <h1>后台管理</h1>
+  <p class="muted">采集脚本的上传、编辑与删除（敏感操作，仅管理员）。</p>
+  <div id="admin-status" class="hidden"></div>
+
+  <div class="section">
+    <h2>新建条目</h2>
+    <form id="create-form">
+      <label for="c-name">名称（风控类型-网站，如 DataDome-radwell.com / 瑞数6-某站）</label>
+      <input type="text" id="c-name" required maxlength="120">
+      <label for="c-version">版本</label>
+      <input type="text" id="c-version" value="v1" required maxlength="20">
+      <label for="c-desc">描述</label>
+      <textarea id="c-desc" rows="2"></textarea>
+      <label for="c-js">采集 JS（符合 __fp_submit 契约，见 docs/collect-js-contract.md）</label>
+      <textarea id="c-js" rows="14" required></textarea>
+      <button type="submit">上传</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <h2>已有条目</h2>
+    <div id="entries-root"><div class="status">正在加载...</div></div>
+  </div>
+
+  <div class="section">
+    <h2>编辑条目</h2>
+    <form id="edit-form" class="hidden">
+      <input type="hidden" id="e-slug">
+      <label for="e-name">名称</label>
+      <input type="text" id="e-name" required maxlength="120">
+      <label for="e-version">版本</label>
+      <input type="text" id="e-version" required maxlength="20">
+      <label for="e-desc">描述</label>
+      <textarea id="e-desc" rows="2"></textarea>
+      <label for="e-js">采集 JS</label>
+      <textarea id="e-js" rows="14" required></textarea>
+      <button type="submit">保存修改</button>
+      <button type="button" class="secondary" id="edit-cancel">取消</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <h2>采集记录清理</h2>
+    <form id="delete-collection-form">
+      <label for="d-collection-id">记录 ID（后台接口 DELETE /api/admin/collections/&lt;id&gt;）</label>
+      <input type="text" id="d-collection-id" required>
+      <button type="submit" class="danger">删除该记录</button>
+    </form>
+  </div>
+</main>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>条目详情 - 指纹共享平台</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topnav">
+  <div class="container">
+    <span class="brand">指纹共享平台</span>
+    <a href="/">导航</a>
+    <a href="/admin/">后台</a>
+  </div>
+</header>
+<main class="container">
+  <div id="entry-root">
+    <div class="status">正在加载条目...</div>
+  </div>
+</main>
+<script src="/static/js/common.js"></script>
+<script>
+(function () {
+  'use strict';
+  var root = document.getElementById('entry-root');
+  var segments = pathSegments(); // ['e', '<slug>']
+  var slug = segments.length >= 2 ? decodeURIComponent(segments[1]) : '';
+
+  if (!slug) {
+    root.innerHTML = '<div class="status error">URL 缺少条目标识</div>';
+  } else {
+    fetchJson('/api/entries/' + encodeURIComponent(slug)).then(function (e) {
+      root.innerHTML =
+        '<h1>' + escapeHtml(e.name) + '</h1>' +
+        '<p class="muted">风险类型: ' + escapeHtml(e.risk_type) +
+        ' | 网站: ' + escapeHtml(e.website) +
+        ' | 版本: ' + escapeHtml(e.version) +
+        ' | 更新: ' + escapeHtml(shortTime(e.updated_at)) + '</p>' +
+        '<div class="section"><h2>说明</h2><p>' + escapeHtml(e.description || '（无描述）') + '</p></div>' +
+        '<div class="actions">' +
+        '<a class="btn btn-primary" href="/dl/' + encodeURIComponent(e.slug) + '.js">下载采集脚本</a>' +
+        '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '">打开采集页</a>' +
+        '<a class="btn" href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹数据</a>' +
+        '<a class="btn" href="/">返回导航</a>' +
+        '</div>';
+    }).catch(function (err) {
+      root.innerHTML = '<div class="status error">加载失败：' + escapeHtml(err.message) + '</div>';
+    });
+  }
+})();
+</script>
+</body>
+</html>
