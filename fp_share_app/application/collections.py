@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from .entries import SHANGHAI_TZ, now_iso as entry_now_iso
 
@@ -112,14 +112,25 @@ def _parse_summary(summary) -> str | None:
 def ingest(conn: sqlite3.Connection, entry_slug: str, payload: dict,
            summary=None, duration_ms: int | None = None,
            visitor_ip: str | None = None, user_agent: str | None = None,
-           kind: str = "environment") -> int | None:
+           kind: str = "environment", dedup_window_seconds: int = 120) -> int | None:
     """写入一条采集记录，返回记录 id；entry 不存在返回 None。
 
     summary 自动附加 facets（UA 大类/小类、OS、时区、屏幕、语言）供筛选与展示。
+    去重：同 entry + kind + IP + UA 在窗口时间内已有记录则返回 -1（重复）。
     """
     row = conn.execute("SELECT id FROM entries WHERE slug = ?", (entry_slug,)).fetchone()
     if row is None:
         return None
+    # 同环境短窗口去重：防标签恢复/后台重载导致的重复上报（窗口为 0 时关闭）
+    if dedup_window_seconds > 0:
+        cutoff = (datetime.now(SHANGHAI_TZ) - timedelta(seconds=dedup_window_seconds)).isoformat()
+        dup = conn.execute(
+            "SELECT COUNT(*) FROM collections WHERE entry_id = ? AND kind = ?"
+            " AND visitor_ip IS ? AND user_agent IS ? AND collected_at >= ?",
+            (row["id"], kind, visitor_ip, user_agent, cutoff),
+        ).fetchone()[0]
+        if dup > 0:
+            return -1
     facets = extract_facets(payload, user_agent)
     if isinstance(summary, dict):
         merged_summary = dict(summary)

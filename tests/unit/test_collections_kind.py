@@ -9,6 +9,10 @@ import pytest
 from fp_share_app.application import collections as collections_uc
 from fp_share_app.application import entries as entries_uc
 
+def _ingest(*args, **kwargs):
+    """测试包装：关闭同环境短窗口去重。"""
+    return collections_uc.ingest(*args, dedup_window_seconds=0, **kwargs)
+
 
 def _seed_entry(conn):
     return entries_uc.create_entry(conn, "DataDome-radwell.com", "js")
@@ -33,23 +37,23 @@ def test_kind_check_rejects_invalid(conn):
 
 def test_ingest_default_environment(conn):
     entry = _seed_entry(conn)
-    record_id = collections_uc.ingest(conn, entry["slug"], {"a": 1})
+    record_id = _ingest(conn, entry["slug"], {"a": 1})
     row = conn.execute("SELECT kind FROM collections WHERE id = ?", (record_id,)).fetchone()
     assert row["kind"] == "environment"
 
 
 def test_ingest_explicit_behavior(conn):
     entry = _seed_entry(conn)
-    record_id = collections_uc.ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
+    record_id = _ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
     row = conn.execute("SELECT kind FROM collections WHERE id = ?", (record_id,)).fetchone()
     assert row["kind"] == "behavior"
 
 
 def test_list_filter_by_kind(conn):
     entry = _seed_entry(conn)
-    collections_uc.ingest(conn, entry["slug"], {"a": 1})
-    collections_uc.ingest(conn, entry["slug"], {"b": 2})
-    collections_uc.ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
+    _ingest(conn, entry["slug"], {"a": 1})
+    _ingest(conn, entry["slug"], {"b": 2})
+    _ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
 
     all_records = collections_uc.list_collections(conn)
     env_records = collections_uc.list_collections(conn, kind="environment")
@@ -63,15 +67,15 @@ def test_list_filter_by_kind(conn):
 
 def test_get_collection_has_kind(conn):
     entry = _seed_entry(conn)
-    record_id = collections_uc.ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
+    record_id = _ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
     record = collections_uc.get_collection(conn, record_id)
     assert record["kind"] == "behavior"
 
 
 def test_export_has_kind_and_filter(conn):
     entry = _seed_entry(conn)
-    collections_uc.ingest(conn, entry["slug"], {"a": 1})
-    collections_uc.ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
+    _ingest(conn, entry["slug"], {"a": 1})
+    _ingest(conn, entry["slug"], {"behavior": {}}, kind="behavior")
     data = collections_uc.export_collections(conn, kind="behavior")
     assert data["count"] == 1
     assert data["records"][0]["kind"] == "behavior"

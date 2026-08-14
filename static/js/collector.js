@@ -76,8 +76,21 @@
     return merged;
   }
 
+  var DEDUP_KEY = 'fp_collect_last';
+  var DEDUP_WINDOW_MS = 5 * 60 * 1000;
+
   function flush() {
     if (submitted || !pendingPayloads.length) { return; }
+    // 同浏览器去重：5 分钟内已采集过则跳过（防标签恢复/后台重载等重复执行）
+    try {
+      var last = Number(localStorage.getItem(DEDUP_KEY) || 0);
+      if (last && Date.now() - last < DEDUP_WINDOW_MS) {
+        submitted = true;
+        pendingPayloads = [];
+        setStatus('近期已采集（5 分钟内），跳过重复上报。如需重新采集请稍后再试。');
+        return;
+      }
+    } catch (e) { /* localStorage 不可用时跳过去重 */ }
     submitted = true;
     var merged = mergePayloads(pendingPayloads);
     pendingPayloads = [];
@@ -107,6 +120,7 @@
       return resp.json().then(function (data) { return { ok: resp.ok, status: resp.status, data: data }; });
     }).then(function (r) {
       if (r.ok) {
+        try { localStorage.setItem(DEDUP_KEY, String(Date.now())); } catch (e) { /* 忽略 */ }
         setStatus('采集完成并已上报：脚本=' + merged.scripts.join('+') +
           '，visitorId=' + (merged.visitorId || '-').slice(0, 20) + '...' +
           '，维度=' + dims + '，耗时=' + merged.durationMs + 'ms');

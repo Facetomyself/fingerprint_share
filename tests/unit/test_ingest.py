@@ -7,18 +7,22 @@ import json
 from fp_share_app.application import collections as collections_uc
 from fp_share_app.application import entries as entries_uc
 
+def _ingest(*args, **kwargs):
+    """测试包装：关闭同环境短窗口去重。"""
+    return collections_uc.ingest(*args, dedup_window_seconds=0, **kwargs)
+
 
 def _seed_entry(conn):
     return entries_uc.create_entry(conn, "DataDome-radwell.com", "js")
 
 
 def test_ingest_unknown_entry(conn):
-    assert collections_uc.ingest(conn, "no-such-entry", {"a": 1}) is None
+    assert _ingest(conn, "no-such-entry", {"a": 1}) is None
 
 
 def test_ingest_and_list(conn):
     entry = _seed_entry(conn)
-    record_id = collections_uc.ingest(
+    record_id = _ingest(
         conn, entry["slug"], {"visitorId": "abc123", "components": {}},
         summary={"visitorId": "abc123", "dimensions": 3},
         duration_ms=42, visitor_ip="127.0.0.1", user_agent="test-agent",
@@ -35,7 +39,7 @@ def test_ingest_and_list(conn):
 
 def test_get_collection_full_payload(conn):
     entry = _seed_entry(conn)
-    record_id = collections_uc.ingest(conn, entry["slug"], {"visitorId": "full"})
+    record_id = _ingest(conn, entry["slug"], {"visitorId": "full"})
     record = collections_uc.get_collection(conn, record_id)
     assert record["payload"] == {"visitorId": "full"}
     assert collections_uc.get_collection(conn, 9999) is None
@@ -43,8 +47,8 @@ def test_get_collection_full_payload(conn):
 
 def test_export(conn):
     entry = _seed_entry(conn)
-    collections_uc.ingest(conn, entry["slug"], {"visitorId": "one"})
-    collections_uc.ingest(conn, entry["slug"], {"visitorId": "two"})
+    _ingest(conn, entry["slug"], {"visitorId": "one"})
+    _ingest(conn, entry["slug"], {"visitorId": "two"})
     data = collections_uc.export_collections(conn, entry_id=entry["id"])
     assert data["count"] == 2
     assert {r["payload"]["visitorId"] for r in data["records"]} == {"one", "two"}
@@ -52,7 +56,7 @@ def test_export(conn):
 
 def test_delete_collection(conn):
     entry = _seed_entry(conn)
-    record_id = collections_uc.ingest(conn, entry["slug"], {"visitorId": "del"})
+    record_id = _ingest(conn, entry["slug"], {"visitorId": "del"})
     assert collections_uc.delete_collection(conn, record_id) is True
     assert collections_uc.delete_collection(conn, record_id) is False
     assert conn.execute("SELECT COUNT(*) FROM collections").fetchone()[0] == 0
@@ -60,8 +64,8 @@ def test_delete_collection(conn):
 
 def test_ingest_summary_string_and_dict(conn):
     entry = _seed_entry(conn)
-    id_dict = collections_uc.ingest(conn, entry["slug"], {"a": 1}, summary={"k": "v"})
-    id_str = collections_uc.ingest(conn, entry["slug"], {"a": 1}, summary='{"k": "v"}')
+    id_dict = _ingest(conn, entry["slug"], {"a": 1}, summary={"k": "v"})
+    id_str = _ingest(conn, entry["slug"], {"a": 1}, summary='{"k": "v"}')
     for record_id in (id_dict, id_str):
         row = conn.execute("SELECT summary FROM collections WHERE id = ?", (record_id,)).fetchone()
         parsed = json.loads(row["summary"])
@@ -79,7 +83,7 @@ def test_ingest_facets_extraction(conn):
             "screen": {"width": 1920, "height": 1080},
         }
     }
-    record_id = collections_uc.ingest(conn, entry["slug"], payload,
+    record_id = _ingest(conn, entry["slug"], payload,
                                       user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0")
     row = conn.execute("SELECT summary FROM collections WHERE id = ?", (record_id,)).fetchone()
     facets = json.loads(row["summary"])["facets"]
@@ -93,9 +97,9 @@ def test_ingest_facets_extraction(conn):
 
 def test_ingest_facets_bot_mobile(conn):
     entry = _seed_entry(conn)
-    bot_id = collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    bot_id = _ingest(conn, entry["slug"], {"a": 1},
                                    user_agent="python-requests/2.31")
-    mobile_id = collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    mobile_id = _ingest(conn, entry["slug"], {"a": 1},
                                       user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile Safari/604")
     bot_facets = json.loads(conn.execute(
         "SELECT summary FROM collections WHERE id = ?", (bot_id,)).fetchone()[0])["facets"]
@@ -109,9 +113,9 @@ def test_ingest_facets_bot_mobile(conn):
 
 def test_list_filter_by_facets(conn):
     entry = _seed_entry(conn)
-    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    _ingest(conn, entry["slug"], {"a": 1},
                           user_agent="Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
-    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    _ingest(conn, entry["slug"], {"a": 1},
                           user_agent="Mozilla/5.0 (Macintosh) Safari/605.1")
     win = collections_uc.list_collections(conn, facets={"os": "Windows"})
     mac = collections_uc.list_collections(conn, facets={"os": "macOS"})
@@ -121,11 +125,11 @@ def test_list_filter_by_facets(conn):
 
 def test_list_facets_aggregation(conn):
     entry = _seed_entry(conn)
-    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    _ingest(conn, entry["slug"], {"a": 1},
                           user_agent="Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
-    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    _ingest(conn, entry["slug"], {"a": 1},
                           user_agent="Mozilla/5.0 (Windows NT 10.0) Chrome/120.0")
-    collections_uc.ingest(conn, entry["slug"], {"a": 1},
+    _ingest(conn, entry["slug"], {"a": 1},
                           user_agent="Mozilla/5.0 (Macintosh) Safari/605.1")
     facets = collections_uc.list_facets(conn)
     assert facets["os"]["Windows"] == 2

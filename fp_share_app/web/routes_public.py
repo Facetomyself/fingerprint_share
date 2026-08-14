@@ -155,6 +155,8 @@ async def api_ingest(request: Request, conn: sqlite3.Connection = Depends(get_db
     )
     if record_id is None:
         raise HTTPException(status_code=404, detail="条目不存在")
+    if record_id == -1:
+        raise HTTPException(status_code=409, detail="同环境短时间内已采集，重复上报已忽略")
     return {"ok": True, "id": record_id}
 
 
