@@ -18,6 +18,7 @@ SEED_ENTRIES = [
                        "机制参考 CreepJS (MIT)，自写实现。",
         "version": "v3",
         "js_file": "collect_js/generic-deep-v3.js",
+        "has_behavior": 1,
     },
     {
         "slug": "datadome-radwell.com",
@@ -27,6 +28,7 @@ SEED_ENTRIES = [
                        "来源 workspace/radwell（jspl 九字段 envelope 研究）。",
         "version": "v1",
         "js_file": "collect_js/datadome-5.9.0-radwell.js",
+        "has_behavior": 1,
     },
     {
         "slug": "ruishu-rs6-electricity",
@@ -35,6 +37,7 @@ SEED_ENTRIES = [
                        "cookie 键名形状 / DOM gate 原型链。来源 workspace/electricity-ruishu-web-v2。",
         "version": "v1",
         "js_file": "collect_js/ruishu-rs6-challenge-electricity.js",
+        "has_behavior": 0,
     },
     {
         "slug": "feilin-51job",
@@ -43,6 +46,7 @@ SEED_ENTRIES = [
                        "回调完整性 / 插件一致性 / 飞林 SDK 全局。来源 workspace/51job-web-reverse。",
         "version": "v1",
         "js_file": "collect_js/feilin-device-fingerprint-51job.js",
+        "has_behavior": 0,
     },
     {
         "slug": "imperva-canadiannorth.com",
@@ -51,6 +55,7 @@ SEED_ENTRIES = [
                        "时钟精度 / XHR fetch 完整性 / 音频渲染耗时。来源 workspace/canadiannorth-imperva-v1。",
         "version": "v1",
         "js_file": "collect_js/imperva-reese84-canadiannorth.js",
+        "has_behavior": 0,
     },
     {
         "slug": "boss-zhipin.com",
@@ -59,6 +64,7 @@ SEED_ENTRIES = [
                        "console 序列化侧信道 / 输入事件面 / 资源域名分组。来源 workspace/boss。",
         "version": "v1",
         "js_file": "collect_js/zhipin-security-js-boss.js",
+        "has_behavior": 1,
     },
 ]
 
@@ -83,6 +89,7 @@ def seed_entries(conn: sqlite3.Connection, project_root: Path) -> dict:
         entry = create_entry(
             conn, spec["name"], collect_js,
             description=spec["description"], version=spec["version"],
+            has_behavior=spec.get("has_behavior", 1),
         )
         # 种子条目使用固定 slug，覆盖自动生成的 slug
         conn.execute("UPDATE entries SET slug = ? WHERE id = ?", (spec["slug"], entry["id"]))

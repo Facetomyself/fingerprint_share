@@ -62,3 +62,15 @@ def test_delete_entry_cascades_collections(conn):
     assert entries_uc.delete_entry(conn, entry["slug"]) is True
     assert conn.execute("SELECT COUNT(*) FROM collections").fetchone()[0] == 0
     assert entries_uc.delete_entry(conn, entry["slug"]) is False
+
+
+def test_has_behavior_default_and_update(conn):
+    entry = entries_uc.create_entry(conn, "DataDome-x.com", "js")
+    assert entry["has_behavior"] == 1
+
+    no_behavior = entries_uc.create_entry(conn, "Imperva-y.com", "js", has_behavior=0)
+    assert no_behavior["has_behavior"] == 0
+
+    updated = entries_uc.update_entry(conn, entry["slug"], has_behavior=0)
+    assert updated["has_behavior"] == 0
+    assert entries_uc.get_entry(conn, entry["slug"], with_js=False)["has_behavior"] == 0

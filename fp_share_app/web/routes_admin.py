@@ -36,6 +36,7 @@ class EntryCreate(BaseModel):
     collect_js: str = Field(min_length=1, max_length=1024 * 1024)
     description: str = ""
     version: str = "v1"
+    has_behavior: int = Field(default=1, ge=0, le=1)
 
 
 class EntryUpdate(BaseModel):
@@ -43,6 +44,7 @@ class EntryUpdate(BaseModel):
     collect_js: str | None = Field(default=None, min_length=1, max_length=1024 * 1024)
     description: str | None = None
     version: str | None = None
+    has_behavior: int | None = Field(default=None, ge=0, le=1)
 
 
 def _set_session_cookie(response: JSONResponse) -> None:
@@ -103,6 +105,7 @@ def api_admin_create_entry(body: EntryCreate, _: bool = Depends(admin_required),
         entry = entries_uc.create_entry(
             conn, body.name, body.collect_js,
             description=body.description, version=body.version,
+            has_behavior=body.has_behavior,
         )
     except NameValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
@@ -117,6 +120,7 @@ def api_admin_update_entry(slug: str, body: EntryUpdate, _: bool = Depends(admin
             conn, slug,
             name=body.name, collect_js=body.collect_js,
             description=body.description, version=body.version,
+            has_behavior=body.has_behavior,
         )
     except NameValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc))

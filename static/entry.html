@@ -31,16 +31,23 @@
     root.innerHTML = '<div class="status error">URL 缺少条目标识</div>';
   } else {
     fetchJson('/api/entries/' + encodeURIComponent(slug)).then(function (e) {
+      var behaviorSection = e.has_behavior
+        ? '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">打开行为采集页</a>'
+        : '<p class="muted">该风控无行为指纹面证据（环境面为主），不提供行为采集页。</p>';
       root.innerHTML =
         '<div class="hero"><h1>' + escapeHtml(e.name) + '</h1>' +
         '<p class="hero-sub">' + escapeHtml(e.risk_type) + ' · ' + escapeHtml(e.website) +
         ' · 版本 ' + escapeHtml(e.version) +
         ' · 更新于 ' + escapeHtml(shortTime(e.updated_at)) + '</p></div>' +
         '<div class="section"><h2>说明</h2><p>' + escapeHtml(e.description || '（无描述）') + '</p>' +
-        '<p class="muted">采集脚本源码不提供下载（敏感），仅可经采集页在浏览器中执行。</p></div>' +
+        '<p class="muted">采集脚本源码不提供下载（敏感），仅可经采集页在浏览器中执行。</p>' +
+        '<h2>采集面</h2>' +
+        '<p><span class="badge badge-ok">环境指纹</span>' +
+        (e.has_behavior ? ' <span class="badge badge-ok">行为指纹（有证据依据）</span>' : ' <span class="badge">行为指纹：不适用</span>') +
+        '</p></div>' +
         '<div class="actions">' +
         '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">打开环境采集页</a>' +
-        '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">打开行为采集页</a>' +
+        behaviorSection +
         '<a class="btn" href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹数据</a>' +
         '<a class="btn" href="/">返回导航</a>' +
         '</div>';

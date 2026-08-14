@@ -76,6 +76,7 @@
     document.getElementById('e-version').value = entry.version;
     document.getElementById('e-desc').value = entry.description || '';
     document.getElementById('e-js').value = entry.collect_js;
+    document.getElementById('e-behavior').checked = !!entry.has_behavior;
     editForm.scrollIntoView();
   }
 
@@ -86,6 +87,7 @@
       name: document.getElementById('c-name').value.trim(),
       version: document.getElementById('c-version').value.trim(),
       description: document.getElementById('c-desc').value.trim(),
+      has_behavior: document.getElementById('c-behavior').checked ? 1 : 0,
       collect_js: document.getElementById('c-js').value
     };
     fetchJson('/api/admin/entries', {
@@ -110,6 +112,7 @@
       name: document.getElementById('e-name').value.trim(),
       version: document.getElementById('e-version').value.trim(),
       description: document.getElementById('e-desc').value.trim(),
+      has_behavior: document.getElementById('e-behavior').checked ? 1 : 0,
       collect_js: document.getElementById('e-js').value
     };
     fetchJson('/api/admin/entries/' + encodeURIComponent(slug), {

@@ -40,13 +40,16 @@
     Object.keys(groups).sort().forEach(function (riskType) {
       html += '<h2 class="group-header">' + escapeHtml(riskType) + '</h2>';
       groups[riskType].forEach(function (e) {
+        var behaviorLink = e.has_behavior
+          ? '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>'
+          : '<span class="badge" title="该风控无行为指纹面证据，不提供行为采集">仅环境面</span>';
         html += '<div class="entry-card">' +
           '<div class="title">' + escapeHtml(e.name) + '</div>' +
           '<div class="desc">' + escapeHtml(e.description || '（无描述）') +
           ' <span class="muted">v' + escapeHtml(e.version) + '</span></div>' +
           '<div class="actions">' +
           '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境采集页</a>' +
-          '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>' +
+          behaviorLink +
           '<a class="btn" href="/static/collections.html?entry=' + encodeURIComponent(e.slug) + '">浏览指纹</a>' +
           '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '">详情</a>' +
           '</div></div>';

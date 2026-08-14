@@ -60,6 +60,8 @@ def page_collect_behavior(slug: str, conn: sqlite3.Connection = Depends(get_db))
     entry = entries_uc.get_entry(conn, slug, with_js=False)
     if entry is None:
         raise HTTPException(status_code=404, detail="条目不存在")
+    if not entry.get("has_behavior"):
+        raise HTTPException(status_code=404, detail="该风控无行为指纹面（无证据依据），不提供行为采集页")
     return FileResponse(STATIC_DIR / "behavior.html")
 
 

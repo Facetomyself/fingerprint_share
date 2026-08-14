@@ -55,7 +55,8 @@ def ensure_unique_slug(conn: sqlite3.Connection, slug: str) -> str:
 
 
 def entry_row_to_dict(row: sqlite3.Row, with_js: bool = False) -> dict:
-    keys = ["id", "slug", "name", "risk_type", "website", "description", "version", "created_at", "updated_at"]
+    keys = ["id", "slug", "name", "risk_type", "website", "description", "version",
+            "has_behavior", "created_at", "updated_at"]
     if with_js:
         keys.append("collect_js")
     return {k: row[k] for k in keys}
@@ -77,7 +78,8 @@ def get_entry(conn: sqlite3.Connection, slug: str, with_js: bool = True) -> dict
 
 
 def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
-                 description: str = "", version: str = "v1") -> dict:
+                 description: str = "", version: str = "v1",
+                 has_behavior: int = 1) -> dict:
     """新建条目：校验命名 → 生成 slug → 插入。slug 为空时以 entry-<id> 落定。"""
     if not collect_js.strip():
         raise NameValidationError("collect_js 不能为空")
@@ -85,9 +87,11 @@ def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
     slug = ensure_unique_slug(conn, generate_slug(name))
     ts = now_iso()
     cur = conn.execute(
-        "INSERT INTO entries (slug, name, risk_type, website, description, collect_js, version, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (slug, name, risk_type, website, description.strip(), collect_js, version, ts, ts),
+        "INSERT INTO entries (slug, name, risk_type, website, description, collect_js, version,"
+        " has_behavior, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (slug, name, risk_type, website, description.strip(), collect_js, version,
+         int(has_behavior), ts, ts),
     )
     if slug.startswith("pending-"):
         slug = f"entry-{cur.lastrowid}"
@@ -98,7 +102,7 @@ def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
 
 def update_entry(conn: sqlite3.Connection, slug: str, *, name: str | None = None,
                  collect_js: str | None = None, description: str | None = None,
-                 version: str | None = None) -> dict | None:
+                 version: str | None = None, has_behavior: int | None = None) -> dict | None:
     """编辑条目：支持部分更新；改 name 时同步 risk_type/website。"""
     row = conn.execute("SELECT * FROM entries WHERE slug = ?", (slug,)).fetchone()
     if row is None:
@@ -110,11 +114,12 @@ def update_entry(conn: sqlite3.Connection, slug: str, *, name: str | None = None
         raise NameValidationError("collect_js 不能为空")
     conn.execute(
         "UPDATE entries SET name = ?, risk_type = ?, website = ?, collect_js = ?, description = ?,"
-        " version = ?, updated_at = ? WHERE id = ?",
+        " version = ?, has_behavior = ?, updated_at = ? WHERE id = ?",
         (
             new_name, risk_type, website, new_js,
             description if description is not None else row["description"],
             version if version is not None else row["version"],
+            int(has_behavior) if has_behavior is not None else row["has_behavior"],
             now_iso(), row["id"],
         ),
     )

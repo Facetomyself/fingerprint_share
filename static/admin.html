@@ -30,6 +30,10 @@
       <input type="text" id="c-version" value="v1" required maxlength="20">
       <label for="c-desc">描述</label>
       <textarea id="c-desc" rows="2"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+        <input type="checkbox" id="c-behavior" checked style="width:auto;">
+        该风控有行为指纹面（有证据依据才勾选；勾选后提供行为采集页）
+      </label>
       <label for="c-js">采集 JS（符合 __fp_submit 契约，见 docs/collect-js-contract.md）</label>
       <textarea id="c-js" rows="14" required></textarea>
       <button type="submit">上传</button>
@@ -51,6 +55,10 @@
       <input type="text" id="e-version" required maxlength="20">
       <label for="e-desc">描述</label>
       <textarea id="e-desc" rows="2"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+        <input type="checkbox" id="e-behavior" style="width:auto;">
+        该风控有行为指纹面（有证据依据才勾选；勾选后提供行为采集页）
+      </label>
       <label for="e-js">采集 JS</label>
       <textarea id="e-js" rows="14" required></textarea>
       <button type="submit">保存修改</button>
