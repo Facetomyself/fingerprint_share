@@ -36,9 +36,14 @@
       return;
     }
     var groups = groupBy(entries, function (e) { return e.risk_type; });
+    var RISK_COLORS = {
+      '通用': '#8c8c9c', 'DataDome': '#fb923c', '瑞数6': '#ff453a', '飞林': '#22d3ee',
+      'Imperva': '#a78bfa', 'BOSS': '#30d158'
+    };
     var html = '';
     Object.keys(groups).sort().forEach(function (riskType) {
-      html += '<h2 class="group-header">' + escapeHtml(riskType) + '</h2>';
+      var color = RISK_COLORS[riskType] || '#0a84ff';
+      html += '<h2 class="group-header" style="--group-color:' + color + ';">' + escapeHtml(riskType) + '</h2>';
       groups[riskType].forEach(function (e) {
         var behaviorLink = e.has_behavior
           ? '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为采集页</a>'

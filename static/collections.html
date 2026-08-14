@@ -173,8 +173,23 @@
         try { summary = JSON.parse(r.summary); } catch (e) { summary = null; }
         var facets = (summary && summary.facets) || {};
         var kindLabel = r.kind === 'behavior' ? '行为' : '环境';
-        function facetCell(value) {
-          return value ? '<span class="badge">' + escapeHtml(value) + '</span>' : '<span class="muted">-</span>';
+        // 分面维度语义色：UA 大类 / OS 用色系，小类/时区/语言用青/紫系
+        var UA_CLASS_COLORS = { desktop: 'badge-blue', mobile: 'badge-orange', tablet: 'badge-violet', bot: 'badge-red', unknown: '' };
+        var OS_COLORS = { Windows: 'badge-blue', macOS: 'badge-violet', Linux: 'badge-orange', Android: 'badge-green', iOS: 'badge-cyan', unknown: '' };
+        function facetCell(value, colorClass) {
+          return value
+            ? '<span class="badge ' + (colorClass || '') + '">' + escapeHtml(value) + '</span>'
+            : '<span class="muted">-</span>';
+        }
+        function facetCellFor(key, value) {
+          var cls = '';
+          if (key === 'uaClass') { cls = UA_CLASS_COLORS[value] || ''; }
+          else if (key === 'os') { cls = OS_COLORS[value] || ''; }
+          else if (key === 'uaBrowser') { cls = value !== 'unknown' ? 'badge-cyan' : ''; }
+          else if (key === 'timezone') { cls = value !== 'unknown' ? 'badge-green' : ''; }
+          else if (key === 'language') { cls = value !== 'unknown' ? 'badge-violet' : ''; }
+          else if (key === 'screen') { cls = value !== 'unknown' ? 'badge-orange' : ''; }
+          return facetCell(value, cls);
         }
         var summaryCell = '-';
         if (r.kind === 'behavior' && summary) {
@@ -189,12 +204,12 @@
         html += '<tr><td>' + r.id + '</td>' +
           '<td>' + kindLabel + '</td>' +
           '<td>' + escapeHtml(shortTime(r.collected_at)) + '</td>' +
-          '<td>' + facetCell(facets.uaClass) + '</td>' +
-          '<td>' + facetCell(facets.uaBrowser) + '</td>' +
-          '<td>' + facetCell(facets.os) + '</td>' +
-          '<td>' + facetCell(facets.timezone) + '</td>' +
-          '<td>' + facetCell(facets.screen) + '</td>' +
-          '<td>' + facetCell(facets.language) + '</td>' +
+          '<td>' + facetCellFor('uaClass', facets.uaClass) + '</td>' +
+          '<td>' + facetCellFor('uaBrowser', facets.uaBrowser) + '</td>' +
+          '<td>' + facetCellFor('os', facets.os) + '</td>' +
+          '<td>' + facetCellFor('timezone', facets.timezone) + '</td>' +
+          '<td>' + facetCellFor('screen', facets.screen) + '</td>' +
+          '<td>' + facetCellFor('language', facets.language) + '</td>' +
           '<td>' + summaryCell + '</td>' +
           '<td><a href="#" data-id="' + r.id + '" class="detail-link">详情</a></td></tr>';
       });

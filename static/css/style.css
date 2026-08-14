@@ -4,25 +4,71 @@
  */
 
 :root {
-  --bg-0: #08080d;
-  --bg-1: #12121a;
+  --bg-0: #07070d;
+  --bg-1: #10101c;
   --glass-bg: rgba(255, 255, 255, 0.055);
   --glass-bg-hover: rgba(255, 255, 255, 0.09);
-  --glass-bg-strong: rgba(20, 20, 30, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-highlight: rgba(255, 255, 255, 0.16);
+  --glass-bg-strong: rgba(16, 16, 28, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
   --text-0: #f5f5f7;
-  --text-1: #b6b6c2;
-  --text-2: #8a8a96;
+  --text-1: #b8b8c6;
+  --text-2: #8c8c9c;
   --accent: #0a84ff;
   --accent-press: #0070e0;
   --ok: #30d158;
   --warn: #ff453a;
   --amber: #ffd60a;
-  --radius-lg: 22px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
+  --violet: #a78bfa;
+  --cyan: #22d3ee;
+  --orange: #fb923c;
+  --pink: #f472b6;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 11px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --shadow-glass: 0 20px 48px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: -apple-system, "SF Pro Display", "SF Pro Text", "Segoe UI",
+    system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-0);
+  background: var(--bg-0);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 背景 aurora：多层色斑 + 微纹理，为玻璃 blur 提供丰富色彩来源 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(680px 520px at 10% -6%, rgba(10, 132, 255, 0.26), transparent 62%),
+    radial-gradient(600px 460px at 92% 4%, rgba(167, 139, 250, 0.20), transparent 58%),
+    radial-gradient(560px 420px at 82% 92%, rgba(34, 211, 238, 0.14), transparent 60%),
+    radial-gradient(720px 560px at 4% 100%, rgba(244, 114, 182, 0.10), transparent 62%),
+    radial-gradient(500px 400px at 48% 46%, rgba(48, 209, 88, 0.06), transparent 65%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+}
+/* 细噪点纹理：增强玻璃材质的深度感 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
 }
 
 * { box-sizing: border-box; }
@@ -90,13 +136,17 @@ header.topnav a {
 header.topnav a:hover { color: var(--text-0); }
 
 /* ---------- Hero ---------- */
-.hero { margin: 34px 0 26px; }
+.hero { margin: 36px 0 28px; }
 .hero h1 {
-  font-size: 44px;
+  font-size: 46px;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.032em;
   line-height: 1.06;
   margin: 0 0 10px;
+  background: linear-gradient(115deg, #f5f5f7 22%, #8ec5ff 58%, #b9a5ff 92%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .hero-sub {
   color: var(--text-1);
@@ -157,36 +207,73 @@ code {
   color: var(--text-1);
 }
 
-/* ---------- 玻璃面板（结构面） ---------- */
+/* ---------- 玻璃面板（结构面）：顶部渐变高光线 + 柔和投影 ---------- */
 .section, .glass {
+  position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    0 12px 32px rgba(0, 0, 0, 0.35);
-  padding: 20px 22px;
-  margin: 14px 0;
+    var(--shadow-glass);
+  padding: 22px 24px;
+  margin: 16px 0;
+  overflow: hidden;
 }
-.section + .section { margin-top: 18px; }
+/* 面板顶部微光带 */
+.section::before, .glass::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 30%,
+    rgba(255, 255, 255, 0.12) 70%,
+    transparent 100%);
+  pointer-events: none;
+}
+.section + .section { margin-top: 20px; }
 
-/* 玻璃卡片：hover 上浮 */
+/* 玻璃卡片：hover 上浮 + 发光 + 光带亮起 */
 .entry-card {
+  position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 1px 0 var(--glass-highlight);
-  padding: 18px 20px;
-  margin: 12px 0;
-  transition: transform 200ms var(--ease-out), background-color 200ms var(--ease-out);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 8px 24px rgba(0, 0, 0, 0.30);
+  padding: 20px 22px;
+  margin: 13px 0;
+  overflow: hidden;
+  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out), background-color 220ms var(--ease-out);
+}
+.entry-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 6%;
+  right: 6%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.28) 35%,
+    rgba(255, 255, 255, 0.08) 65%,
+    transparent 100%);
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-out);
 }
 .entry-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   background-color: var(--glass-bg-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 16px 40px rgba(0, 0, 0, 0.40);
 }
 .entry-card .title {
   font-size: 17px;
@@ -201,6 +288,27 @@ code {
 }
 .entry-card .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* 风控类型分组：彩色标识点 + 上边距节奏 */
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-2);
+  margin: 34px 0 8px;
+}
+.group-header::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--group-color, var(--accent));
+  box-shadow: 0 0 12px var(--group-color, var(--accent));
+  flex-shrink: 0;
+}
 .group-header {
   font-size: 13px;
   font-weight: 600;
@@ -224,10 +332,11 @@ a.btn, button, .actions a {
   letter-spacing: -0.002em;
   cursor: pointer;
   transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out),
-    border-color 140ms var(--ease-out);
+    border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
 }
 a.btn:hover, button:hover, .actions a:hover {
   background: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 a.btn:active, button:active, .actions a:active {
   transform: scale(0.97);
@@ -289,9 +398,12 @@ td {
   vertical-align: top;
 }
 tbody tr {
-  transition: background-color 160ms var(--ease-out);
+  transition: background-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
 }
-tbody tr:hover { background: rgba(255, 255, 255, 0.045); }
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
 tbody tr:last-child td { border-bottom: none; }
 td a { color: var(--accent); text-decoration: none; }
 td a:hover { text-decoration: underline; }
@@ -328,6 +440,13 @@ td a:hover { text-decoration: underline; }
 }
 .badge-ok { background: rgba(48, 209, 88, 0.14); border-color: rgba(48, 209, 88, 0.32); color: var(--ok); }
 .badge-warn { background: rgba(255, 69, 58, 0.14); border-color: rgba(255, 69, 58, 0.34); color: var(--warn); }
+/* 分面维度语义色：UA 大类 / 小类 / OS 等 */
+.badge-blue { background: rgba(10, 132, 255, 0.14); border-color: rgba(10, 132, 255, 0.34); color: #5eb0ff; }
+.badge-green { background: rgba(48, 209, 88, 0.14); border-color: rgba(48, 209, 88, 0.32); color: var(--ok); }
+.badge-orange { background: rgba(251, 146, 60, 0.14); border-color: rgba(251, 146, 60, 0.34); color: var(--orange); }
+.badge-red { background: rgba(255, 69, 58, 0.14); border-color: rgba(255, 69, 58, 0.34); color: var(--warn); }
+.badge-violet { background: rgba(167, 139, 250, 0.14); border-color: rgba(167, 139, 250, 0.34); color: var(--violet); }
+.badge-cyan { background: rgba(34, 211, 238, 0.14); border-color: rgba(34, 211, 238, 0.34); color: var(--cyan); }
 
 /* 大分数字 */
 .score-hero {
