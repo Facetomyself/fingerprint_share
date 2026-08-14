@@ -1,0 +1,189 @@
+/* imperva-reese84-canadiannorth 采集模板
+ * 专有探测面（通用面由 generic-deep-v3 覆盖，本条目聚焦 Imperva Incapsula challenge 求值面）：
+ *   - incap cookie 键名形状（visid_incap 前缀 / incap_ses 前缀 / nlbi 前缀 / reese84，只记键名）
+ *   - challenge script src 结构（动态注入脚本的域名/路径形状）
+ *   - 时钟精度面（performance.now 分辨率、setTimeout 最小分辨率，Imperva 检测时钟一致性）
+ *   - XHR/fetch 完整性（open/fetch 的 native 检测与 descriptor）
+ *   - OfflineAudioContext 渲染耗时（challenge 求值依赖环境签名）
+ * 来源：workspace/canadiannorth-imperva-v1（Incapsula reese84 研究）。
+ * 契约：调用 window.__fp_submit(payload)；不含 "</" + "script" 字面量。
+ */
+(async function () {
+  'use strict';
+
+  var SCRIPT = 'imperva-reese84-canadiannorth';
+  var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  var w = window;
+  var d = document;
+  var errors = [];
+  var components = {};
+
+  function sha256Hex(text) {
+    if (w.crypto && w.crypto.subtle && w.crypto.subtle.digest) {
+      return w.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        var hex = '';
+        for (var i = 0; i < bytes.length; i++) {
+          hex += ('0' + bytes[i].toString(16)).slice(-2);
+        }
+        return hex;
+      });
+    }
+    var h = 0x811c9dc5;
+    for (var j = 0; j < text.length; j++) {
+      h ^= text.charCodeAt(j);
+      h = (h * 0x01000193) >>> 0;
+    }
+    return Promise.resolve(('0000000' + h.toString(16)).slice(-8));
+  }
+
+  function nowMs() {
+    return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  }
+
+  function safe(name, fn) {
+    try {
+      components[name] = fn();
+    } catch (e) {
+      components[name] = null;
+      errors.push(name + ':' + (e && e.name ? e.name : 'error'));
+    }
+  }
+
+  function nativeOf(fn) {
+    try {
+      return /\[native code\]/.test(Function.prototype.toString.call(fn));
+    } catch (e) { return null; }
+  }
+
+  // ---------- incap cookie 键名形状 ----------
+  safe('incapCookieKeys', function () {
+    var keys = d.cookie.split(';').map(function (part) {
+      return part.trim().split('=')[0].slice(0, 120);
+    }).filter(function (k) { return k.length > 0; });
+    var matched = keys.filter(function (k) {
+      return /^(visid_incap|incap_ses|nlbi|reese|_px|pxhd)/.test(k);
+    });
+    return {
+      totalKeys: keys.length,
+      incapMatched: matched.slice(0, 20),
+      incapPrefixGroups: {
+        visid: keys.filter(function (k) { return k.indexOf('visid_incap') === 0; }).length,
+        ses: keys.filter(function (k) { return k.indexOf('incap_ses') === 0; }).length,
+        nlbi: keys.filter(function (k) { return k.indexOf('nlbi') === 0; }).length,
+        reese: keys.filter(function (k) { return k.indexOf('reese') === 0; }).length
+      }
+    };
+  });
+
+  // ---------- challenge script src 结构 ----------
+  safe('scriptSrcShape', function () {
+    var out = { inlineCount: 0, external: [] };
+    Array.prototype.forEach.call(d.scripts, function (s) {
+      if (s.src) {
+        try {
+          var url = new URL(s.src, location.href);
+          out.external.push({
+            host: url.hostname,
+            pathPrefix: url.pathname.split('/').slice(0, 2).join('/'),
+            hasQuery: url.search.length > 0
+          });
+        } catch (e) { out.external.push({ host: 'unparsed', pathPrefix: '', hasQuery: false }); }
+      } else {
+        out.inlineCount += 1;
+      }
+    });
+    return out;
+  });
+
+  // ---------- 时钟精度面（异步，手动 await） ----------
+  async function clockPrecisionProbe() {
+    var samples = [];
+    for (var i = 0; i < 20; i++) {
+      samples.push(performance.now());
+      await new Promise(function (r) { setTimeout(r, 0); });
+    }
+    var deltas = [];
+    for (var j = 1; j < samples.length; j++) {
+      deltas.push(Math.round((samples[j] - samples[j - 1]) * 1000) / 1000);
+    }
+    var uniq = {};
+    deltas.forEach(function (v) { uniq[v] = true; });
+    var seen = {};
+    for (var k = 0; k < 50; k++) {
+      var v = performance.now();
+      var last = String(v).split('.')[1] || '';
+      if (last.length >= 2) { seen[last.slice(-1)] = true; }
+    }
+    return {
+      uniqueDeltas: Object.keys(uniq).length,
+      minDelta: deltas.length ? Math.min.apply(null, deltas) : null,
+      maxDelta: deltas.length ? Math.max.apply(null, deltas) : null,
+      lastDigitVariety: Object.keys(seen).length
+    };
+  }
+
+  // ---------- XHR/fetch 完整性 ----------
+  safe('transportIntegrity', function () {
+    var out = {};
+    out.xhrOpenNative = nativeOf(XMLHttpRequest.prototype.open);
+    out.xhrSendNative = nativeOf(XMLHttpRequest.prototype.send);
+    out.fetchNative = nativeOf(w.fetch);
+    try {
+      var desc = Object.getOwnPropertyDescriptor(Window.prototype, 'fetch');
+      out.fetchWritable = desc ? desc.writable : null;
+    } catch (e) { out.fetchWritable = null; }
+    try {
+      out.xhrOpenDescriptor = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'open')
+        ? 'own' : 'inherited';
+    } catch (e) { out.xhrOpenDescriptor = null; }
+    return out;
+  });
+
+  // ---------- OfflineAudioContext 渲染耗时（异步，手动 await） ----------
+  async function audioRenderTimingProbe() {
+    var OAC = w.OfflineAudioContext || w.webkitOfflineAudioContext;
+    if (!OAC) { return null; }
+    var octx = new OAC(1, 44100, 44100);
+    var osc = octx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 440;
+    var gain = octx.createGain();
+    gain.gain.value = 0.1;
+    osc.connect(gain);
+    gain.connect(octx.destination);
+    osc.start(0);
+    var start = performance.now();
+    await octx.startRendering();
+    return {
+      renderMs: Math.round(performance.now() - start),
+      sampleRate: octx.sampleRate
+    };
+  }
+
+  // 异步探测（clockPrecision 与 audioRenderTiming 见上方 async 函数）
+  try { components.clockPrecision = await clockPrecisionProbe(); }
+  catch (e) { components.clockPrecision = null; errors.push('clockPrecision:' + (e.name || 'error')); }
+  try { components.audioRenderTiming = await audioRenderTimingProbe(); }
+  catch (e) { components.audioRenderTiming = null; errors.push('audioRenderTiming:' + (e.name || 'error')); }
+
+  // ---------- 组装上报 ----------
+  var STABLE_KEYS = ['incapCookieKeys', 'scriptSrcShape', 'transportIntegrity'];
+  var stable = {};
+  STABLE_KEYS.forEach(function (k) { stable[k] = components[k]; });
+  var visitorId = await sha256Hex(JSON.stringify(stable));
+
+  var payload = {
+    script: SCRIPT,
+    kind: 'environment',
+    collectedAt: new Date().toISOString(),
+    visitorId: visitorId,
+    components: components,
+    errors: errors,
+    durationMs: Math.round(nowMs() - t0)
+  };
+
+  if (typeof w.__fp_submit === 'function') {
+    w.__fp_submit(payload);
+  }
+})();

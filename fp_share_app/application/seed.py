@@ -19,6 +19,47 @@ SEED_ENTRIES = [
         "version": "v3",
         "js_file": "collect_js/generic-deep-v3.js",
     },
+    {
+        "slug": "datadome-radwell.com",
+        "name": "DataDome-radwell.com",
+        "description": "DataDome tags.js 5.9.0 专有探测面：dd 全局形状 / eventCounters 计数结构 / "
+                       "cid 形状生成 / request envelope 输入面 / defineProperty 可覆写性 / storage dd 键名。"
+                       "来源 workspace/radwell（jspl 九字段 envelope 研究）。",
+        "version": "v1",
+        "js_file": "collect_js/datadome-5.9.0-radwell.js",
+    },
+    {
+        "slug": "ruishu-rs6-electricity",
+        "name": "瑞数6-electricity-ruishu-web-v2",
+        "description": "瑞数 6 挑战页专有环境面：$_ts 全局形状 / script 结构 / meta 与 URL 参数名结构 / "
+                       "cookie 键名形状 / DOM gate 原型链。来源 workspace/electricity-ruishu-web-v2。",
+        "version": "v1",
+        "js_file": "collect_js/ruishu-rs6-challenge-electricity.js",
+    },
+    {
+        "slug": "feilin-51job",
+        "name": "飞林-51job.com",
+        "description": "飞林 FeiLin v1.4.2 反调试完整性面：toString 深度 / document.all 行为 / 扩展脚本检测 / "
+                       "回调完整性 / 插件一致性 / 飞林 SDK 全局。来源 workspace/51job-web-reverse。",
+        "version": "v1",
+        "js_file": "collect_js/feilin-device-fingerprint-51job.js",
+    },
+    {
+        "slug": "imperva-canadiannorth.com",
+        "name": "Imperva-canadiannorth.com",
+        "description": "Imperva Incapsula challenge 求值面：incap cookie 键名形状 / script src 结构 / "
+                       "时钟精度 / XHR fetch 完整性 / 音频渲染耗时。来源 workspace/canadiannorth-imperva-v1。",
+        "version": "v1",
+        "js_file": "collect_js/imperva-reese84-canadiannorth.js",
+    },
+    {
+        "slug": "boss-zhipin.com",
+        "name": "BOSS-zhipin.com",
+        "description": "BOSS 直聘 security-js 设备指纹面：WebGL readPixels 行为 / 设备指纹字段组合 / "
+                       "console 序列化侧信道 / 输入事件面 / 资源域名分组。来源 workspace/boss。",
+        "version": "v1",
+        "js_file": "collect_js/zhipin-security-js-boss.js",
+    },
 ]
 
 

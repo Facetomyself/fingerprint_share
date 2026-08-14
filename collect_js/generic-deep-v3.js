@@ -742,7 +742,7 @@
     var out = {};
     var samples = {
       baseline: 'mmmmmmmmmmlli',
-      zeroWidth: 'a​b',
+      zeroWidth: 'a\u200bb',
       emoji: 'a\uD83D\uDE00b',
       spaces: 'a    b',
       ligature: 'ffi'
