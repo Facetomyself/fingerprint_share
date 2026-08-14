@@ -10,3 +10,13 @@ data/
 __pycache__/
 .pytest_cache/
 *.log
+
+# 采集脚本源码与页面模块（敏感，仅本地承载；seed 从本地目录读取）
+collect_js/
+page_modules/
+
+# 本地插件/浏览器扩展（用户自写，不进 Git）
+extension/
+plugin/
+*.crx
+*.xpi
