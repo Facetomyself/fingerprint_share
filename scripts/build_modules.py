@@ -127,6 +127,7 @@ COLLECT_TEMPLATE = """<!doctype html>
 </main>
 <script src="/static/js/collector.js"></script>
 <script src="/modules/__SLUG__/collect.js"></script>
+__GENERIC_SCRIPT__
 </body>
 </html>
 """
@@ -425,12 +426,21 @@ def build_module(spec: dict) -> dict:
     behavior_button = ""
     if has_behavior:
         behavior_button = ('    <a class="btn btn-primary" href="/collect/__SLUG__/behavior">行为指纹采集</a>\n')
+    # 组合采集：非通用条目附加通用深度脚本（风控条目 = 专有面 + 通用深度面）
+    generic_script = ""
+    combined_js = collect_js_content
+    if slug != "generic-deep-v3":
+        generic_path = MODULES_DIR / "generic-deep-v3" / "collect.js"
+        if generic_path.is_file():
+            generic_script = f'<script src="/modules/generic-deep-v3/collect.js"></script>\n'
+            combined_js = collect_js_content + "\n" + generic_path.read_text(encoding="utf-8")
     values = {
         "SLUG": slug, "NAME": name, "RISK_TYPE": risk_type, "WEBSITE": website,
         "DESCRIPTION": spec["description"],
         "TAGS_HTML": tags_html,
-        "PARAM_ROWS": build_param_rows(collect_js_content),
-        "PARAM_DETAILS": build_param_details(collect_js_content),
+        "GENERIC_SCRIPT": generic_script,
+        "PARAM_ROWS": build_param_rows(combined_js),
+        "PARAM_DETAILS": build_param_details(combined_js),
         "BEHAVIOR_BUTTON": behavior_button,
         "NOTICE": NOTICE_TEXT,
     }

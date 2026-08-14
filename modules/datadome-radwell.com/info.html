@@ -32,6 +32,38 @@
         <tr><td><code>envelopeInputs</code></td><td>DataDome 请求信封输入面（路径长度/脚本元素计数/iframe 数）</td></tr>
         <tr><td><code>definePropertySurface</code></td><td>属性埋点可覆写性（defineProperty 行为与 navigator 封装状态）</td></tr>
         <tr><td><code>storageDdKeys</code></td><td>本地存储中 DataDome 键名集合</td></tr>
+        <tr><td><code>navigator</code></td><td>浏览器与设备属性：UA、平台、语言、硬件并发、插件集合等 20+ 字段</td></tr>
+        <tr><td><code>screen</code></td><td>屏幕分辨率、可用区域与色深</td></tr>
+        <tr><td><code>viewport</code></td><td>视口尺寸、设备像素比与窗口偏移</td></tr>
+        <tr><td><code>webgl</code></td><td>WebGL 18 项参数与 UNMASKED 渲染器标识</td></tr>
+        <tr><td><code>webgl2</code></td><td>WebGL2 参数面（可用时）</td></tr>
+        <tr><td><code>offscreen</code></td><td>OffscreenCanvas 支持与上下文类型</td></tr>
+        <tr><td><code>timing</code></td><td>导航时序关键点（浅层）</td></tr>
+        <tr><td><code>matchMedia</code></td><td>9 组媒体查询响应（断点/配色/指针/悬停）</td></tr>
+        <tr><td><code>cssom</code></td><td>CSS 特性支持与样式系统行为（:focus-within/宽色域/cssRules）</td></tr>
+        <tr><td><code>storage</code></td><td>localStorage/sessionStorage 读写往返与 indexedDB 可用性</td></tr>
+        <tr><td><code>intl</code></td><td>国际化环境：时区、日历、数字系统、区域设置</td></tr>
+        <tr><td><code>fonts</code></td><td>常用字体可用性（9 组布尔探测）</td></tr>
+        <tr><td><code>apiSurface</code></td><td>22 项 Web API 存在性矩阵（电池/权限/WebXR/串口等）</td></tr>
+        <tr><td><code>prototypeProbes</code></td><td>原型行为探测：hasFocus/setProperty 描述符与 String receiver 行为</td></tr>
+        <tr><td><code>pluginsDeep</code></td><td>插件集合深度行为（item/namedItem/首插件详情）</td></tr>
+        <tr><td><code>fontsMeasure</code></td><td>10 组字体字形测量宽度</td></tr>
+        <tr><td><code>automationFlags</code></td><td>自动化痕迹：webdriver 描述符、CDP/Selenium 遗留属性、headless UA</td></tr>
+        <tr><td><code>timingDeep</code></td><td>导航时序全 21 字段、资源与绘制条目计数</td></tr>
+        <tr><td><code>webrtc</code></td><td>RTCPeerConnection 与数据通道行为</td></tr>
+        <tr><td><code>cookieHistory</code></td><td>Cookie 写读往返、历史记录长度与窗口关系</td></tr>
+        <tr><td><code>media</code></td><td>语音合成/识别与 MediaSource 能力</td></tr>
+        <tr><td><code>wasm</code></td><td>WebAssembly 内存与模块 API 行为</td></tr>
+        <tr><td><code>svg</code></td><td>SVG getBBox/getScreenCTM 渲染形状</td></tr>
+        <tr><td><code>domrect</code></td><td>DOMRect.fromRect/toJSON 键集与 getClientRects 行为</td></tr>
+        <tr><td><code>textmetrics</code></td><td>文本测量边界行为（零宽字符/Emoji/连字）</td></tr>
+        <tr><td><code>voices</code></td><td>语音合成声音列表（名称/语言/本地或远程）</td></tr>
+        <tr><td><code>queryLies</code></td><td>10 核心接口的函数完整性逐项检查（toString 白名单/ownProps/描述符/栈帧）</td></tr>
+        <tr><td><code>prototypeLies</code></td><td>40+ 接口原型链属性采集与 hashMini 基线</td></tr>
+        <tr><td><code>crossValidation</code></td><td>plugins 与 mimeTypes 双向一致性验证</td></tr>
+        <tr><td><code>phantomIframe</code></td><td>隐藏 iframe 隔离环境 12 项同款 API 对比</td></tr>
+        <tr><td><code>stability</code></td><td>双画布逐像素稳定性、双音频波形一致性、Math 期望值表</td></tr>
+        <tr><td><code>timerPrecision</code></td><td>环境探测参数</td></tr>
       </table>
     </div>
   </div>
@@ -45,6 +77,38 @@
       <li><code>envelopeInputs</code> —— DataDome 请求信封输入面（路径长度/脚本元素计数/iframe 数）。<br><span class="muted">作用：fingerprint POST 九字段信封的输入结构。</span></li>
       <li><code>definePropertySurface</code> —— 属性埋点可覆写性（defineProperty 行为与 navigator 封装状态）。<br><span class="muted">作用：DataDome 埋点机制依赖的环境可写性验证。</span></li>
       <li><code>storageDdKeys</code> —— 本地存储中 DataDome 键名集合。<br><span class="muted">作用：DataDome 状态持久化痕迹。</span></li>
+      <li><code>navigator</code> —— 浏览器与设备属性：UA、平台、语言、硬件并发、插件集合等 20+ 字段。<br><span class="muted">作用：识别浏览器类型、操作系统与基础硬件配置；UA 与多字段交叉一致性的基础数据。</span></li>
+      <li><code>screen</code> —— 屏幕分辨率、可用区域与色深。<br><span class="muted">作用：识别显示设备规格；与视口数据交叉验证分辨率伪装。</span></li>
+      <li><code>viewport</code> —— 视口尺寸、设备像素比与窗口偏移。<br><span class="muted">作用：识别浏览器窗口状态；DPR 与分辨率组合是设备指纹的稳定分量。</span></li>
+      <li><code>webgl</code> —— WebGL 18 项参数与 UNMASKED 渲染器标识。<br><span class="muted">作用：GPU 型号与驱动指纹；渲染器品牌分级判定伪造。</span></li>
+      <li><code>webgl2</code> —— WebGL2 参数面（可用时）。<br><span class="muted">作用：GPU 能力指纹的扩展维度。</span></li>
+      <li><code>offscreen</code> —— OffscreenCanvas 支持与上下文类型。<br><span class="muted">作用：浏览器版本能力面指纹。</span></li>
+      <li><code>timing</code> —— 导航时序关键点（浅层）。<br><span class="muted">作用：页面加载性能特征。</span></li>
+      <li><code>matchMedia</code> —— 9 组媒体查询响应（断点/配色/指针/悬停）。<br><span class="muted">作用：显示设备与浏览器偏好指纹。</span></li>
+      <li><code>cssom</code> —— CSS 特性支持与样式系统行为（:focus-within/宽色域/cssRules）。<br><span class="muted">作用：浏览器渲染引擎版本指纹；cssRules 可访问性反映安全上下文。</span></li>
+      <li><code>storage</code> —— localStorage/sessionStorage 读写往返与 indexedDB 可用性。<br><span class="muted">作用：存储可用性指纹；隐私模式下读写失败是重要特征。</span></li>
+      <li><code>intl</code> —— 国际化环境：时区、日历、数字系统、区域设置。<br><span class="muted">作用：系统区域指纹；时区与 IP 地理位置的交叉验证基础。</span></li>
+      <li><code>fonts</code> —— 常用字体可用性（9 组布尔探测）。<br><span class="muted">作用：字体集合指纹的基础维度。</span></li>
+      <li><code>apiSurface</code> —— 22 项 Web API 存在性矩阵（电池/权限/WebXR/串口等）。<br><span class="muted">作用：浏览器版本与功能面指纹；缺失项反映隐私策略或伪装。</span></li>
+      <li><code>prototypeProbes</code> —— 原型行为探测：hasFocus/setProperty 描述符与 String receiver 行为。<br><span class="muted">作用：检测原型篡改：原生函数行为异常是自动化环境的主要特征。</span></li>
+      <li><code>pluginsDeep</code> —— 插件集合深度行为（item/namedItem/首插件详情）。<br><span class="muted">作用：插件体系指纹与集合一致性验证。</span></li>
+      <li><code>fontsMeasure</code> —— 10 组字体字形测量宽度。<br><span class="muted">作用：字体渲染指纹：同一字体在不同系统上的度量差异。</span></li>
+      <li><code>automationFlags</code> —— 自动化痕迹：webdriver 描述符、CDP/Selenium 遗留属性、headless UA。<br><span class="muted">作用：自动化环境检测：无头浏览器与驱动注入的直接证据。</span></li>
+      <li><code>timingDeep</code> —— 导航时序全 21 字段、资源与绘制条目计数。<br><span class="muted">作用：加载行为特征；与声明环境的一致性交叉点。</span></li>
+      <li><code>webrtc</code> —— RTCPeerConnection 与数据通道行为。<br><span class="muted">作用：WebRTC 能力指纹；可用于后续网络面扩展。</span></li>
+      <li><code>cookieHistory</code> —— Cookie 写读往返、历史记录长度与窗口关系。<br><span class="muted">作用：存储与导航状态指纹；窗口关系反映嵌入场景。</span></li>
+      <li><code>media</code> —— 语音合成/识别与 MediaSource 能力。<br><span class="muted">作用：媒体能力面指纹。</span></li>
+      <li><code>wasm</code> —— WebAssembly 内存与模块 API 行为。<br><span class="muted">作用：WASM 能力指纹；构造行为差异反映引擎版本。</span></li>
+      <li><code>svg</code> —— SVG getBBox/getScreenCTM 渲染形状。<br><span class="muted">作用：SVG 渲染引擎指纹。</span></li>
+      <li><code>domrect</code> —— DOMRect.fromRect/toJSON 键集与 getClientRects 行为。<br><span class="muted">作用：DOM 几何 API 指纹（引擎版本敏感）。</span></li>
+      <li><code>textmetrics</code> —— 文本测量边界行为（零宽字符/Emoji/连字）。<br><span class="muted">作用：文本引擎指纹：边界字符测量差异显著。</span></li>
+      <li><code>voices</code> —— 语音合成声音列表（名称/语言/本地或远程）。<br><span class="muted">作用：系统 TTS 声音集合指纹，设备级差异明显。</span></li>
+      <li><code>queryLies</code> —— 10 核心接口的函数完整性逐项检查（toString 白名单/ownProps/描述符/栈帧）。<br><span class="muted">作用：原生函数被包装或篡改时在此暴露；每项检查失败都是具体证据。</span></li>
+      <li><code>prototypeLies</code> —— 40+ 接口原型链属性采集与 hashMini 基线。<br><span class="muted">作用：原型面基线指纹；与已知扩展哈希比对识别浏览器扩展。</span></li>
+      <li><code>crossValidation</code> —— plugins 与 mimeTypes 双向一致性验证。<br><span class="muted">作用：插件集合结构异常（缺失/错配）暴露伪造。</span></li>
+      <li><code>phantomIframe</code> —— 隐藏 iframe 隔离环境 12 项同款 API 对比。<br><span class="muted">作用：主窗口与隔离环境的差异暴露扩展注入或环境伪装。</span></li>
+      <li><code>stability</code> —— 双画布逐像素稳定性、双音频波形一致性、Math 期望值表。<br><span class="muted">作用：每次渲染结果不同的画布/音频是噪声注入的直接证据；Math 输出偏差反映引擎异常。</span></li>
+      <li><code>timerPrecision</code> —— 环境探测参数。<br><span class="muted">作用：采集环境特征数据，用于指纹对照与一致性分析。</span></li>
     </ul>
   </div>
 
