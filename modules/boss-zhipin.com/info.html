@@ -11,35 +11,43 @@
   <div class="container">
     <span class="brand">指纹共享平台</span>
     <a href="/">导航</a>
-    <a href="/admin/">后台</a>
+    <a href="/admin/">管理后台</a>
   </div>
 </header>
 <main class="container">
   <div class="hero">
     <h1>BOSS-zhipin.com</h1>
-    <p class="hero-sub">BOSS 风控 · zhipin.com · 完整功能插件（采集脚本与展示页面一体化）</p>
+    <p class="hero-sub">BOSS · zhipin.com</p>
   </div>
 
   <div class="section">
-    <h2>采集了什么</h2>
+    <h2>采集参数</h2>
     <p>BOSS 直聘 security-js 设备指纹面：WebGL readPixels 行为 / 设备指纹字段组合 / console 序列化侧信道 / 输入事件面 / 资源域名分组。来源 workspace/boss。</p>
-    <p style="margin-top:10px;">
-      <span class="badge">BOSS</span> <span class="badge badge-ok">环境指纹</span> <span class="badge badge-violet">行为指纹</span> <span class="badge">滑块验证</span> <span class="badge">设备指纹</span> <span class="badge">登录链</span>
-    </p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>参数</th><th>采集内容</th></tr>
+                <tr><td><code>webglReadPixels</code></td><td>WebGL 1x1 readPixels 像素哈希与 WebGL2 存在性</td></tr>
+        <tr><td><code>deviceFingerprintShape</code></td><td>设备指纹字段组合（deviceMemory/并发数/pdfViewerEnabled 等）</td></tr>
+        <tr><td><code>consoleSideChannel</code></td><td>控制台序列化侧信道（log/table/error 的描述符与原生性）</td></tr>
+        <tr><td><code>inputEventSurface</code></td><td>输入事件面（composition/InputEvent/isTrusted 支持）</td></tr>
+        <tr><td><code>resourceDomains</code></td><td>页面资源域名分组计数</td></tr>
+      </table>
+    </div>
   </div>
 
   <div class="section">
-    <h2>怎么使用</h2>
-    <ul>
-      <li>打开<a href="/collect/boss-zhipin.com">环境采集页</a>：执行环境指纹采集，自动上报平台。</li>
-            <li>打开<a href="/collect/__SLUG__/behavior">行为剧本页</a>：在复刻原网站行为逻辑的页面上按真实交互方式操作，剧本阶段自动记录。</li>
-      <li>在<a href="/e/boss-zhipin.com/fingerprints">指纹页</a>浏览与下载采集结果（支持 UA 大类/小类、OS、时区等分面筛选）。</li>
-      <li>采集脚本源码见本插件目录 <code>collect.js</code>（集成在本插件中，可审计可复用）。</li>
+    <h2>参数说明</h2>
+    <ul class="param-detail">
+            <li><code>webglReadPixels</code> —— WebGL 1x1 readPixels 像素哈希与 WebGL2 存在性。<br><span class="muted">作用：BOSS 设备指纹的 GPU 像素读取分量。</span></li>
+      <li><code>deviceFingerprintShape</code> —— 设备指纹字段组合（deviceMemory/并发数/pdfViewerEnabled 等）。<br><span class="muted">作用：BOSS 设备指纹的字段清单与组合形状。</span></li>
+      <li><code>consoleSideChannel</code> —— 控制台序列化侧信道（log/table/error 的描述符与原生性）。<br><span class="muted">作用：BOSS 遥测的 console 侧信道完整性。</span></li>
+      <li><code>inputEventSurface</code> —— 输入事件面（composition/InputEvent/isTrusted 支持）。<br><span class="muted">作用：IME 与输入事件能力面：BOSS 行为检测的输入语义基础。</span></li>
+      <li><code>resourceDomains</code> —— 页面资源域名分组计数。<br><span class="muted">作用：页面资源加载结构：遥测域特征。</span></li>
     </ul>
   </div>
 
   <div class="section">
-    <h2>注意事项</h2>
+    <h2>使用约束</h2>
     <p>1. 采集页面将采集您的浏览器环境/行为指纹并存储至共享数据库。该数据仅用于
    风控研究对照分析，请勿在包含隐私信息的环境中访问。
 2. 采集数据在本平台内公开共享。将数据带出平台时，须遵守 restricted-local
@@ -49,10 +57,10 @@
   </div>
 
   <div class="actions">
-    <a class="btn btn-primary" href="/collect/boss-zhipin.com">打开环境采集页</a>
-        <a class="btn btn-primary" href="/collect/__SLUG__/behavior">打开行为剧本页</a>
+    <a class="btn btn-primary" href="/collect/boss-zhipin.com">环境指纹采集</a>
+        <a class="btn btn-primary" href="/collect/__SLUG__/behavior">行为指纹采集</a>
 
-    <a class="btn" href="/e/boss-zhipin.com/fingerprints">浏览指纹数据</a>
+    <a class="btn" href="/e/boss-zhipin.com/fingerprints">指纹数据</a>
     <a class="btn" href="/">返回导航</a>
   </div>
 </main>

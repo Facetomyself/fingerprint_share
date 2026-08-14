@@ -162,7 +162,7 @@
         var slugForLinks = state.entrySlug ? encodeURIComponent(state.entrySlug) : '';
         listRoot.innerHTML = '<div class="status">当前筛选下暂无采集记录。打开<a href="/collect/' +
           slugForLinks + '">环境采集页</a>或<a href="/collect/' +
-          slugForLinks + '/behavior">行为采集页</a>产生数据。</div>';
+          slugForLinks + '/behavior">行为指纹采集</a>产生数据。</div>';
         pagerRoot.innerHTML = '';
         return;
       }

@@ -1,30 +1,29 @@
-# DataDome-radwell.com 插件（指纹采集模块包）
+# DataDome-radwell.com 采集模块
 
-DataDome 风控（radwell.com）的完整功能插件：采集脚本与展示页面一体化，
-集成在平台 Web 体系内（非浏览器扩展）。
+DataDome 风控（radwell.com）的指纹采集模块。
 
 ## 目录
 
-- `info.html`       展示页：采集了什么 / 怎么使用 / 注意事项
-- `collect.html`    环境采集页：自动执行 collect.js 并上报平台
-- `collect.js`      环境采集脚本（可审计可复用）
-- `challenge.html`  行为剧本页（复刻原网站行为逻辑，如有）
+- `info.html`       条目详情：采集参数清单与参数说明
+- `collect.html`    环境指纹采集页：自动执行 collect.js 并上报平台
+- `collect.js`      环境指纹采集脚本（可审计可复用）
+- `challenge.html`  行为指纹采集页（复刻原网站行为逻辑，如有）
 - `README.md`       本文件
 
 ## 平台接入
 
 | 页面 | 平台路由 |
 |---|---|
-| 展示页 | `/e/datadome-radwell.com` |
-| 环境采集页 | `/collect/datadome-radwell.com` |
-| 行为剧本页 | `/collect/datadome-radwell.com/behavior` |
+| 条目详情 | `/e/datadome-radwell.com` |
+| 环境指纹采集 | `/collect/datadome-radwell.com` |
+| 行为指纹采集 | `/collect/datadome-radwell.com/behavior` |
 | 指纹数据 | `/e/datadome-radwell.com/fingerprints` |
 
-## 采集了什么
+## 采集参数
 
 DataDome tags.js 5.9.0 专有探测面：dd 全局形状 / eventCounters 计数结构 / cid 形状生成 / request envelope 输入面 / defineProperty 可覆写性 / storage dd 键名。来源 workspace/radwell（jspl 九字段 envelope 研究）。
 
-## 注意事项
+## 使用约束
 
 1. 采集页面将采集您的浏览器环境/行为指纹并存储至共享数据库。该数据仅用于
    风控研究对照分析，请勿在包含隐私信息的环境中访问。

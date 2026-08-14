@@ -11,35 +11,39 @@
   <div class="container">
     <span class="brand">指纹共享平台</span>
     <a href="/">导航</a>
-    <a href="/admin/">后台</a>
+    <a href="/admin/">管理后台</a>
   </div>
 </header>
 <main class="container">
   <div class="hero">
     <h1>Imperva-canadiannorth.com</h1>
-    <p class="hero-sub">Imperva 风控 · canadiannorth.com · 完整功能插件（采集脚本与展示页面一体化）</p>
+    <p class="hero-sub">Imperva · canadiannorth.com</p>
   </div>
 
   <div class="section">
-    <h2>采集了什么</h2>
+    <h2>采集参数</h2>
     <p>Imperva Incapsula challenge 求值面：incap cookie 键名形状 / script src 结构 / 时钟精度 / XHR fetch 完整性 / 音频渲染耗时。来源 workspace/canadiannorth-imperva-v1。</p>
-    <p style="margin-top:10px;">
-      <span class="badge">Imperva</span> <span class="badge badge-ok">环境指纹</span> <span class="badge">挑战求值</span> <span class="badge">时钟检测</span>
-    </p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>参数</th><th>采集内容</th></tr>
+                <tr><td><code>incapCookieKeys</code></td><td>Imperva Cookie 键名形状（visid/ses/nlbi/reese 前缀分组）</td></tr>
+        <tr><td><code>scriptSrcShape</code></td><td>挑战脚本 src 结构（域名/路径前缀/查询参数）</td></tr>
+        <tr><td><code>transportIntegrity</code></td><td>传输层完整性（XHR open/send 与 fetch 的原生性）</td></tr>
+      </table>
+    </div>
   </div>
 
   <div class="section">
-    <h2>怎么使用</h2>
-    <ul>
-      <li>打开<a href="/collect/imperva-canadiannorth.com">环境采集页</a>：执行环境指纹采集，自动上报平台。</li>
-      
-      <li>在<a href="/e/imperva-canadiannorth.com/fingerprints">指纹页</a>浏览与下载采集结果（支持 UA 大类/小类、OS、时区等分面筛选）。</li>
-      <li>采集脚本源码见本插件目录 <code>collect.js</code>（集成在本插件中，可审计可复用）。</li>
+    <h2>参数说明</h2>
+    <ul class="param-detail">
+            <li><code>incapCookieKeys</code> —— Imperva Cookie 键名形状（visid/ses/nlbi/reese 前缀分组）。<br><span class="muted">作用：Incapsula 会话与挑战状态的 Cookie 痕迹。</span></li>
+      <li><code>scriptSrcShape</code> —— 挑战脚本 src 结构（域名/路径前缀/查询参数）。<br><span class="muted">作用：Imperva 动态挑战脚本的加载结构。</span></li>
+      <li><code>transportIntegrity</code> —— 传输层完整性（XHR open/send 与 fetch 的原生性）。<br><span class="muted">作用：XHR/fetch 被包装的证据。</span></li>
     </ul>
   </div>
 
   <div class="section">
-    <h2>注意事项</h2>
+    <h2>使用约束</h2>
     <p>1. 采集页面将采集您的浏览器环境/行为指纹并存储至共享数据库。该数据仅用于
    风控研究对照分析，请勿在包含隐私信息的环境中访问。
 2. 采集数据在本平台内公开共享。将数据带出平台时，须遵守 restricted-local
@@ -49,9 +53,9 @@
   </div>
 
   <div class="actions">
-    <a class="btn btn-primary" href="/collect/imperva-canadiannorth.com">打开环境采集页</a>
+    <a class="btn btn-primary" href="/collect/imperva-canadiannorth.com">环境指纹采集</a>
     
-    <a class="btn" href="/e/imperva-canadiannorth.com/fingerprints">浏览指纹数据</a>
+    <a class="btn" href="/e/imperva-canadiannorth.com/fingerprints">指纹数据</a>
     <a class="btn" href="/">返回导航</a>
   </div>
 </main>

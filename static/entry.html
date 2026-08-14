@@ -32,7 +32,7 @@
   } else {
     fetchJson('/api/entries/' + encodeURIComponent(slug)).then(function (e) {
       var behaviorSection = e.has_behavior
-        ? '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">打开行为采集页</a>'
+        ? '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为指纹采集</a>'
         : '<p class="muted">该风控无行为指纹面证据（环境面为主），不提供行为采集页。</p>';
       root.innerHTML =
         '<div class="hero"><h1>' + escapeHtml(e.name) + '</h1>' +
@@ -46,7 +46,7 @@
         (e.has_behavior ? ' <span class="badge badge-ok">行为指纹（有证据依据）</span>' : ' <span class="badge">行为指纹：不适用</span>') +
         '</p></div>' +
         '<div class="actions">' +
-        '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">打开环境采集页</a>' +
+        '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境指纹采集</a>' +
         behaviorSection +
         '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '/fingerprints">浏览指纹数据</a>' +
         '<a class="btn" href="/">返回导航</a>' +

@@ -11,35 +11,45 @@
   <div class="container">
     <span class="brand">指纹共享平台</span>
     <a href="/">导航</a>
-    <a href="/admin/">后台</a>
+    <a href="/admin/">管理后台</a>
   </div>
 </header>
 <main class="container">
   <div class="hero">
     <h1>飞林-51job.com</h1>
-    <p class="hero-sub">飞林 风控 · 51job.com · 完整功能插件（采集脚本与展示页面一体化）</p>
+    <p class="hero-sub">飞林 · 51job.com</p>
   </div>
 
   <div class="section">
-    <h2>采集了什么</h2>
+    <h2>采集参数</h2>
     <p>飞林 FeiLin v1.4.2 反调试完整性面：toString 深度 / document.all 行为 / 扩展脚本检测 / 回调完整性 / 插件一致性 / 飞林 SDK 全局。来源 workspace/51job-web-reverse。</p>
-    <p style="margin-top:10px;">
-      <span class="badge">飞林</span> <span class="badge badge-ok">环境指纹</span> <span class="badge">反调试</span> <span class="badge">完整性检测</span> <span class="badge">设备指纹</span>
-    </p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>参数</th><th>采集内容</th></tr>
+                <tr><td><code>toStringDeep</code></td><td>函数字符串化深度（toString 的 toString、eval 形状）</td></tr>
+        <tr><td><code>documentAll</code></td><td>document.all 行为（typeof/真值/长度）</td></tr>
+        <tr><td><code>extensionScan</code></td><td>扩展与篡改脚本检测（GM 前缀/unsafeWindow/用户脚本标记）</td></tr>
+        <tr><td><code>callbackIntegrity</code></td><td>回调完整性（setTimeout/setInterval 原生性与可覆写性）</td></tr>
+        <tr><td><code>pluginConsistency</code></td><td>插件集合一致性（plugins 数与 mimeTypes 数比率）</td></tr>
+        <tr><td><code>feilinGlobals</code></td><td>飞林 SDK 全局变量形状</td></tr>
+      </table>
+    </div>
   </div>
 
   <div class="section">
-    <h2>怎么使用</h2>
-    <ul>
-      <li>打开<a href="/collect/feilin-51job">环境采集页</a>：执行环境指纹采集，自动上报平台。</li>
-      
-      <li>在<a href="/e/feilin-51job/fingerprints">指纹页</a>浏览与下载采集结果（支持 UA 大类/小类、OS、时区等分面筛选）。</li>
-      <li>采集脚本源码见本插件目录 <code>collect.js</code>（集成在本插件中，可审计可复用）。</li>
+    <h2>参数说明</h2>
+    <ul class="param-detail">
+            <li><code>toStringDeep</code> —— 函数字符串化深度（toString 的 toString、eval 形状）。<br><span class="muted">作用：飞林反调试面：函数伪装检测的深度证据。</span></li>
+      <li><code>documentAll</code> —— document.all 行为（typeof/真值/长度）。<br><span class="muted">作用：浏览器真实性检测向量：老式兼容层行为差异。</span></li>
+      <li><code>extensionScan</code> —— 扩展与篡改脚本检测（GM 前缀/unsafeWindow/用户脚本标记）。<br><span class="muted">作用：浏览器扩展注入痕迹扫描。</span></li>
+      <li><code>callbackIntegrity</code> —— 回调完整性（setTimeout/setInterval 原生性与可覆写性）。<br><span class="muted">作用：定时器被包装的证据：飞林检测回调链完整性。</span></li>
+      <li><code>pluginConsistency</code> —— 插件集合一致性（plugins 数与 mimeTypes 数比率）。<br><span class="muted">作用：飞林插件一致性验证向量。</span></li>
+      <li><code>feilinGlobals</code> —— 飞林 SDK 全局变量形状。<br><span class="muted">作用：飞林指纹 SDK 初始化痕迹。</span></li>
     </ul>
   </div>
 
   <div class="section">
-    <h2>注意事项</h2>
+    <h2>使用约束</h2>
     <p>1. 采集页面将采集您的浏览器环境/行为指纹并存储至共享数据库。该数据仅用于
    风控研究对照分析，请勿在包含隐私信息的环境中访问。
 2. 采集数据在本平台内公开共享。将数据带出平台时，须遵守 restricted-local
@@ -49,9 +59,9 @@
   </div>
 
   <div class="actions">
-    <a class="btn btn-primary" href="/collect/feilin-51job">打开环境采集页</a>
+    <a class="btn btn-primary" href="/collect/feilin-51job">环境指纹采集</a>
     
-    <a class="btn" href="/e/feilin-51job/fingerprints">浏览指纹数据</a>
+    <a class="btn" href="/e/feilin-51job/fingerprints">指纹数据</a>
     <a class="btn" href="/">返回导航</a>
   </div>
 </main>

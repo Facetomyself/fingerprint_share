@@ -17,7 +17,7 @@
 <main class="container">
   <div class="hero">
     <h1>指纹共享平台</h1>
-    <p class="hero-sub">浏览器环境与行为指纹采集共享平台。按风控类型组织的采集插件、行为剧本与指纹数据库，面向逆向研究与风控对照分析。</p>
+    <p class="hero-sub">浏览器环境与行为指纹采集共享平台。按风控类型组织的环境指纹采集、行为指纹采集与指纹数据库，面向逆向研究与风控对照分析。</p>
     <div class="hero-search">
       <input id="search-input" type="text" placeholder="搜索风控类型、网站或指纹特征...">
     </div>
@@ -155,9 +155,9 @@
         '<div class="card-tags">' + tagsHtml + '</div>' +
         '<p class="card-desc">' + escapeHtml((e.description || '暂无描述').slice(0, 72)) + (e.description && e.description.length > 72 ? '...' : '') + '</p>' +
         '<div class="card-actions">' +
-        '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境采集</a>' +
+        '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境指纹采集</a>' +
         (e.has_behavior
-          ? '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为剧本</a>'
+          ? '<a class="btn" href="/collect/' + encodeURIComponent(e.slug) + '/behavior">行为指纹采集</a>'
           : '') +
         '<a class="btn" href="/e/' + encodeURIComponent(e.slug) + '/fingerprints">指纹数据</a>' +
         '</div></div></div>';
@@ -170,7 +170,7 @@
     var totalRecords = rows.reduce(function (acc, r) { return acc + r.total; }, 0);
     var behaviorCount = allEntries.filter(function (e) { return e.has_behavior; }).length;
     var html = '共 ' + allEntries.length + ' 个风控条目 · ' + totalRecords + ' 条采集记录 · ' +
-      behaviorCount + ' 个含行为剧本';
+      behaviorCount + ' 个含行为指纹采集';
     statRow.innerHTML = html;
   }
 

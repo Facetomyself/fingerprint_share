@@ -11,35 +11,45 @@
   <div class="container">
     <span class="brand">指纹共享平台</span>
     <a href="/">导航</a>
-    <a href="/admin/">后台</a>
+    <a href="/admin/">管理后台</a>
   </div>
 </header>
 <main class="container">
   <div class="hero">
     <h1>DataDome-radwell.com</h1>
-    <p class="hero-sub">DataDome 风控 · radwell.com · 完整功能插件（采集脚本与展示页面一体化）</p>
+    <p class="hero-sub">DataDome · radwell.com</p>
   </div>
 
   <div class="section">
-    <h2>采集了什么</h2>
+    <h2>采集参数</h2>
     <p>DataDome tags.js 5.9.0 专有探测面：dd 全局形状 / eventCounters 计数结构 / cid 形状生成 / request envelope 输入面 / defineProperty 可覆写性 / storage dd 键名。来源 workspace/radwell（jspl 九字段 envelope 研究）。</p>
-    <p style="margin-top:10px;">
-      <span class="badge">DataDome</span> <span class="badge badge-ok">环境指纹</span> <span class="badge badge-violet">行为指纹</span> <span class="badge">挑战流程</span> <span class="badge">音频验证码</span> <span class="badge">设备指纹</span>
-    </p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>参数</th><th>采集内容</th></tr>
+                <tr><td><code>ddGlobals</code></td><td>DataDome 全局变量形状（ddjskey/ddoptions 键名与类型）</td></tr>
+        <tr><td><code>eventCounters</code></td><td>DataDome 行为计数器初始结构（click/keydown/mousemove 监听状态）</td></tr>
+        <tr><td><code>cidShape</code></td><td>DataDome 会话标识形状生成能力（时间戳 base36 + 随机）</td></tr>
+        <tr><td><code>envelopeInputs</code></td><td>DataDome 请求信封输入面（路径长度/脚本元素计数/iframe 数）</td></tr>
+        <tr><td><code>definePropertySurface</code></td><td>属性埋点可覆写性（defineProperty 行为与 navigator 封装状态）</td></tr>
+        <tr><td><code>storageDdKeys</code></td><td>本地存储中 DataDome 键名集合</td></tr>
+      </table>
+    </div>
   </div>
 
   <div class="section">
-    <h2>怎么使用</h2>
-    <ul>
-      <li>打开<a href="/collect/datadome-radwell.com">环境采集页</a>：执行环境指纹采集，自动上报平台。</li>
-            <li>打开<a href="/collect/__SLUG__/behavior">行为剧本页</a>：在复刻原网站行为逻辑的页面上按真实交互方式操作，剧本阶段自动记录。</li>
-      <li>在<a href="/e/datadome-radwell.com/fingerprints">指纹页</a>浏览与下载采集结果（支持 UA 大类/小类、OS、时区等分面筛选）。</li>
-      <li>采集脚本源码见本插件目录 <code>collect.js</code>（集成在本插件中，可审计可复用）。</li>
+    <h2>参数说明</h2>
+    <ul class="param-detail">
+            <li><code>ddGlobals</code> —— DataDome 全局变量形状（ddjskey/ddoptions 键名与类型）。<br><span class="muted">作用：DataDome 集成状态指纹：标签脚本是否初始化及其暴露面。</span></li>
+      <li><code>eventCounters</code> —— DataDome 行为计数器初始结构（click/keydown/mousemove 监听状态）。<br><span class="muted">作用：DataDome 行为埋点计数器的结构基线。</span></li>
+      <li><code>cidShape</code> —— DataDome 会话标识形状生成能力（时间戳 base36 + 随机）。<br><span class="muted">作用：会话标识生成环境的能力验证。</span></li>
+      <li><code>envelopeInputs</code> —— DataDome 请求信封输入面（路径长度/脚本元素计数/iframe 数）。<br><span class="muted">作用：fingerprint POST 九字段信封的输入结构。</span></li>
+      <li><code>definePropertySurface</code> —— 属性埋点可覆写性（defineProperty 行为与 navigator 封装状态）。<br><span class="muted">作用：DataDome 埋点机制依赖的环境可写性验证。</span></li>
+      <li><code>storageDdKeys</code> —— 本地存储中 DataDome 键名集合。<br><span class="muted">作用：DataDome 状态持久化痕迹。</span></li>
     </ul>
   </div>
 
   <div class="section">
-    <h2>注意事项</h2>
+    <h2>使用约束</h2>
     <p>1. 采集页面将采集您的浏览器环境/行为指纹并存储至共享数据库。该数据仅用于
    风控研究对照分析，请勿在包含隐私信息的环境中访问。
 2. 采集数据在本平台内公开共享。将数据带出平台时，须遵守 restricted-local
@@ -49,10 +59,10 @@
   </div>
 
   <div class="actions">
-    <a class="btn btn-primary" href="/collect/datadome-radwell.com">打开环境采集页</a>
-        <a class="btn btn-primary" href="/collect/__SLUG__/behavior">打开行为剧本页</a>
+    <a class="btn btn-primary" href="/collect/datadome-radwell.com">环境指纹采集</a>
+        <a class="btn btn-primary" href="/collect/__SLUG__/behavior">行为指纹采集</a>
 
-    <a class="btn" href="/e/datadome-radwell.com/fingerprints">浏览指纹数据</a>
+    <a class="btn" href="/e/datadome-radwell.com/fingerprints">指纹数据</a>
     <a class="btn" href="/">返回导航</a>
   </div>
 </main>
