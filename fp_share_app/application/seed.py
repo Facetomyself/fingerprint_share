@@ -11,11 +11,13 @@ SEED_ENTRIES = [
     {
         "slug": "generic-browser-env-v1",
         "name": "通用-浏览器环境基线",
-        "description": "通用浏览器环境指纹基线模板：navigator/screen/viewport/Canvas/WebGL/AudioContext/"
-                       "Navigation Timing/matchMedia/CSSOM/iframe realm/storage/Worker/Intl/时区/字体探测。"
-                       "维度对齐 radwell 项目的 DataDome 环境面研究，设计参考 FingerprintJS v5 (MIT)。",
-        "version": "v1",
-        "js_file": "collect_js/generic-browser-env-v1.js",
+        "description": "通用浏览器环境指纹基线模板 v2：30 组件。navigator 20+ 字段/screen/viewport/双 Canvas hash/"
+                       "WebGL 18 参数/OffscreenCanvas/AudioContext/原型行为探测（hasFocus/setProperty descriptor）/"
+                       "plugins 深度/字体测量/automation flags/WebRTC/API 表面矩阵/timing 全字段/iframe realm 深度/"
+                       "cookie-history/媒体能力/Worker/Intl/时区。维度对齐 radwell DataDome 环境面研究"
+                       "（browser 189 终端探测分类），设计参考 FingerprintJS v5 (MIT)。",
+        "version": "v2",
+        "js_file": "collect_js/generic-browser-env-v2.js",
     },
 ]
 
