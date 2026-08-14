@@ -19,6 +19,7 @@ SEED_ENTRIES = [
         "version": "v3",
         "js_file": "modules/generic-deep-v3/collect.js",
         "has_behavior": 1,
+        "tags": ['通用', '环境面', '行为面', '深度探测', '谎言检测', '反指纹检测'],
     },
     {
         "slug": "datadome-radwell.com",
@@ -29,6 +30,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "modules/datadome-radwell.com/collect.js",
         "has_behavior": 1,
+        "tags": ['DataDome', '环境面', '行为面', '挑战流程', '音频验证码', '设备指纹'],
         "page_module_file": "modules/datadome-radwell.com/challenge.html",
     },
     {
@@ -39,6 +41,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "modules/ruishu-rs6-electricity/collect.js",
         "has_behavior": 1,
+        "tags": ['瑞数6', '环境面', '行为面', '412挑战', '动态混淆', 'DOM环境'],
         "page_module_file": "modules/ruishu-rs6-electricity/challenge.html",
     },
     {
@@ -49,6 +52,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "modules/feilin-51job/collect.js",
         "has_behavior": 0,
+        "tags": ['飞林', '环境面', '反调试', '完整性检测', '设备指纹'],
     },
     {
         "slug": "imperva-canadiannorth.com",
@@ -58,6 +62,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "modules/imperva-canadiannorth.com/collect.js",
         "has_behavior": 0,
+        "tags": ['Imperva', '环境面', '挑战求值', '时钟检测'],
     },
     {
         "slug": "boss-zhipin.com",
@@ -67,6 +72,7 @@ SEED_ENTRIES = [
         "version": "v1",
         "js_file": "modules/boss-zhipin.com/collect.js",
         "has_behavior": 1,
+        "tags": ['BOSS', '环境面', '行为面', '滑块验证', '设备指纹', '登录链'],
         "page_module_file": "modules/boss-zhipin.com/challenge.html",
     },
 ]
@@ -101,6 +107,7 @@ def seed_entries(conn: sqlite3.Connection, project_root: Path) -> dict:
             conn, spec["name"], collect_js,
             description=spec["description"], version=spec["version"],
             has_behavior=spec.get("has_behavior", 1), page_module=page_module,
+            tags=spec.get("tags"),
         )
         # 种子条目使用固定 slug，覆盖自动生成的 slug
         conn.execute("UPDATE entries SET slug = ? WHERE id = ?", (spec["slug"], entry["id"]))

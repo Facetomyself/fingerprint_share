@@ -1,7 +1,8 @@
-"""采集条目用例：命名规则校验、slug 生成、CRUD。"""
+"""采集条目用例：命名规则校验、slug 生成、CRUD、标签。"""
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 import uuid
@@ -56,12 +57,27 @@ def ensure_unique_slug(conn: sqlite3.Connection, slug: str) -> str:
 
 def entry_row_to_dict(row: sqlite3.Row, with_js: bool = False, with_module: bool = False) -> dict:
     keys = ["id", "slug", "name", "risk_type", "website", "description", "version",
-            "has_behavior", "created_at", "updated_at"]
+            "has_behavior", "tags", "created_at", "updated_at"]
     if with_js:
         keys.append("collect_js")
     if with_module:
         keys.append("page_module")
-    return {k: row[k] for k in keys}
+    result = {k: row[k] for k in keys}
+    result["tags"] = _parse_tags(result.get("tags"))
+    return result
+
+
+def _parse_tags(raw) -> list[str]:
+    """tags 存 JSON 数组字符串；解析失败返回空列表。"""
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return [str(t) for t in raw]
+    try:
+        parsed = json.loads(raw)
+        return [str(t) for t in parsed] if isinstance(parsed, list) else []
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 def has_page_module(row: sqlite3.Row) -> bool:
@@ -87,7 +103,8 @@ def get_entry(conn: sqlite3.Connection, slug: str, with_js: bool = True,
 
 def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
                  description: str = "", version: str = "v1",
-                 has_behavior: int = 1, page_module: str = "") -> dict:
+                 has_behavior: int = 1, page_module: str = "",
+                 tags: list[str] | None = None) -> dict:
     """新建条目：校验命名 → 生成 slug → 插入。slug 为空时以 entry-<id> 落定。"""
     if not collect_js.strip():
         raise NameValidationError("collect_js 不能为空")
@@ -96,10 +113,11 @@ def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
     ts = now_iso()
     cur = conn.execute(
         "INSERT INTO entries (slug, name, risk_type, website, description, collect_js, version,"
-        " has_behavior, page_module, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " has_behavior, page_module, tags, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (slug, name, risk_type, website, description.strip(), collect_js, version,
-         int(has_behavior), page_module or "", ts, ts),
+         int(has_behavior), page_module or "", json.dumps(tags or [], ensure_ascii=False),
+         ts, ts),
     )
     if slug.startswith("pending-"):
         slug = f"entry-{cur.lastrowid}"
@@ -111,7 +129,7 @@ def create_entry(conn: sqlite3.Connection, name: str, collect_js: str,
 def update_entry(conn: sqlite3.Connection, slug: str, *, name: str | None = None,
                  collect_js: str | None = None, description: str | None = None,
                  version: str | None = None, has_behavior: int | None = None,
-                 page_module: str | None = None) -> dict | None:
+                 page_module: str | None = None, tags: list[str] | None = None) -> dict | None:
     """编辑条目：支持部分更新；改 name 时同步 risk_type/website。"""
     row = conn.execute("SELECT * FROM entries WHERE slug = ?", (slug,)).fetchone()
     if row is None:
@@ -123,13 +141,14 @@ def update_entry(conn: sqlite3.Connection, slug: str, *, name: str | None = None
         raise NameValidationError("collect_js 不能为空")
     conn.execute(
         "UPDATE entries SET name = ?, risk_type = ?, website = ?, collect_js = ?, description = ?,"
-        " version = ?, has_behavior = ?, page_module = ?, updated_at = ? WHERE id = ?",
+        " version = ?, has_behavior = ?, page_module = ?, tags = ?, updated_at = ? WHERE id = ?",
         (
             new_name, risk_type, website, new_js,
             description if description is not None else row["description"],
             version if version is not None else row["version"],
             int(has_behavior) if has_behavior is not None else row["has_behavior"],
             page_module if page_module is not None else row["page_module"],
+            json.dumps(tags, ensure_ascii=False) if tags is not None else row["tags"],
             now_iso(), row["id"],
         ),
     )

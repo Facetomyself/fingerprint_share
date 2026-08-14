@@ -688,6 +688,13 @@ canvas#traj-canvas {
 }
 .mini-tag.tag-green { background: rgba(48, 209, 88, 0.13); border-color: rgba(48, 209, 88, 0.3); color: var(--ok); }
 .mini-tag.tag-muted { opacity: 0.7; }
+.mini-tag.tag-main {
+  background: rgba(10, 132, 255, 0.13);
+  border-color: rgba(10, 132, 255, 0.3);
+  color: #5eb0ff;
+  font-weight: 500;
+}
+.footer-stats { text-align: center; margin: 6px 0 30px; }
 .card-desc {
   font-size: 12.5px;
   color: var(--text-2);

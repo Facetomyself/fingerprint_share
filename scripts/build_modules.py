@@ -61,8 +61,7 @@ INFO_TEMPLATE = """<!doctype html>
     <h2>采集了什么</h2>
     <p>__DESCRIPTION__</p>
     <p style="margin-top:10px;">
-      <span class="badge badge-ok">环境指纹</span>
-      __BEHAVIOR_BADGE__
+      __TAGS_HTML__
     </p>
   </div>
 
@@ -231,8 +230,13 @@ def build_module(spec: dict) -> dict:
     out_dir = MODULES_DIR / slug
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    behavior_badge = (' <span class="badge badge-ok">行为指纹（行为剧本页）</span>'
-                      if has_behavior else ' <span class="badge">行为指纹：不适用（无证据依据）</span>')
+    tags = spec.get("tags") or []
+    tags_html = " ".join(
+        '<span class="badge badge-ok">环境指纹</span>' if t == "环境面"
+        else ('<span class="badge badge-violet">行为指纹</span>' if t == "行为面"
+              else f'<span class="badge">{t}</span>')
+        for t in tags
+    )
     behavior_step = ""
     behavior_button = ""
     if has_behavior:
@@ -242,7 +246,7 @@ def build_module(spec: dict) -> dict:
     values = {
         "SLUG": slug, "NAME": name, "RISK_TYPE": risk_type, "WEBSITE": website,
         "DESCRIPTION": spec["description"],
-        "BEHAVIOR_BADGE": behavior_badge,
+        "TAGS_HTML": tags_html,
         "BEHAVIOR_STEP": behavior_step,
         "BEHAVIOR_BUTTON": behavior_button,
         "NOTICE": NOTICE_TEXT,

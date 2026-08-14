@@ -21,7 +21,6 @@
     <div class="hero-search">
       <input id="search-input" type="text" placeholder="搜索风控类型、网站或指纹特征...">
     </div>
-    <div class="stat-row" id="stat-row"></div>
   </div>
 
   <div class="filter-chips" id="filter-chips"></div>
@@ -29,6 +28,8 @@
   <div class="card-grid" id="entries-root">
     <div class="status">正在加载条目...</div>
   </div>
+
+  <p class="muted footer-stats" id="stat-row"></p>
 </main>
 <script src="/static/js/common.js"></script>
 <script>
@@ -53,15 +54,20 @@
     'BOSS': { c1: '#1e8a4c', c2: '#0f5c30' }
   };
 
-  // 标准标签：常用标签可在下方预设中增删（全部/行为面/仅环境面/各风控类型）
+  // 标准内容标签：从所有条目的 tags 并集生成常用标签 chips（按使用频次排序）
   function buildChips() {
+    var tagCount = {};
+    allEntries.forEach(function (e) {
+      (e.tags || []).forEach(function (t) {
+        tagCount[t] = (tagCount[t] || 0) + 1;
+      });
+    });
+    var sortedTags = Object.keys(tagCount).sort(function (a, b) {
+      return tagCount[b] - tagCount[a] || a.localeCompare(b);
+    });
     var chips = [{ key: 'all', label: '全部' }];
-    chips.push({ key: 'behavior', label: '含行为剧本' });
-    chips.push({ key: 'env-only', label: '仅环境面' });
-    var riskTypes = {};
-    allEntries.forEach(function (e) { riskTypes[e.risk_type] = true; });
-    Object.keys(riskTypes).sort().forEach(function (rt) {
-      chips.push({ key: 'risk:' + rt, label: rt });
+    sortedTags.forEach(function (t) {
+      chips.push({ key: 'tag:' + t, label: t + ' (' + tagCount[t] + ')' });
     });
     chipsRoot.innerHTML = '';
     chips.forEach(function (c) {
@@ -70,10 +76,10 @@
       btn.textContent = c.label;
       btn.addEventListener('click', function () {
         activeFilter = c.key;
+        renderGrid();
         Array.prototype.forEach.call(chipsRoot.querySelectorAll('.chip'), function (b) {
           b.className = 'chip' + (b.textContent === c.label ? ' active' : '');
         });
-        renderGrid();
       });
       chipsRoot.appendChild(btn);
     });
@@ -81,10 +87,9 @@
 
   function matchesFilter(e) {
     if (activeFilter === 'all') { return true; }
-    if (activeFilter === 'behavior') { return !!e.has_behavior; }
-    if (activeFilter === 'env-only') { return !e.has_behavior; }
-    if (activeFilter.indexOf('risk:') === 0) {
-      return e.risk_type === activeFilter.slice(5);
+    if (activeFilter.indexOf('tag:') === 0) {
+      var tag = activeFilter.slice(4);
+      return (e.tags || []).indexOf(tag) >= 0;
     }
     return true;
   }
@@ -136,10 +141,10 @@
     var html = '';
     filtered.forEach(function (e) {
       var color = RISK_COLORS[e.risk_type] || { c1: '#3a3a4a', c2: '#23232e' };
-      var tags = '<span class="mini-tag">' + escapeHtml(e.risk_type) + '</span>' +
-        (e.has_behavior
-          ? '<span class="mini-tag tag-green">行为剧本</span>'
-          : '<span class="mini-tag tag-muted">仅环境面</span>');
+      var tagsHtml = (e.tags || []).map(function (t, idx) {
+        var cls = idx === 0 ? 'mini-tag tag-main' : 'mini-tag';
+        return '<span class="' + cls + '">' + escapeHtml(t) + '</span>';
+      }).join('');
       html += '<div class="risk-card" style="--risk-c1:' + color.c1 + ';--risk-c2:' + color.c2 + ';">' +
         '<a class="card-cover" href="/e/' + encodeURIComponent(e.slug) + '">' +
         renderCoverGlyph(coverGlyph(e.risk_type)) +
@@ -147,7 +152,7 @@
         '</a>' +
         '<div class="card-body">' +
         '<a class="card-title" href="/e/' + encodeURIComponent(e.slug) + '">' + escapeHtml(e.name) + '</a>' +
-        '<div class="card-tags">' + tags + '</div>' +
+        '<div class="card-tags">' + tagsHtml + '</div>' +
         '<p class="card-desc">' + escapeHtml((e.description || '暂无描述').slice(0, 72)) + (e.description && e.description.length > 72 ? '...' : '') + '</p>' +
         '<div class="card-actions">' +
         '<a class="btn btn-primary" href="/collect/' + encodeURIComponent(e.slug) + '">环境采集</a>' +
@@ -161,14 +166,11 @@
   }
 
   function renderStats(rows) {
+    // 统计为页面底部辅助信息，不作为标签展示
     var totalRecords = rows.reduce(function (acc, r) { return acc + r.total; }, 0);
-    var html = '<span class="stat-chip">条目 <strong>' + allEntries.length + '</strong></span>' +
-      '<span class="stat-chip">采集记录 <strong>' + totalRecords + '</strong></span>' +
-      '<span class="stat-chip">含行为剧本 <strong>' +
-      allEntries.filter(function (e) { return e.has_behavior; }).length + '</strong></span>';
-    rows.forEach(function (r) {
-      html += '<span class="stat-chip">' + escapeHtml(r.name) + ' <strong>' + r.total + '</strong></span>';
-    });
+    var behaviorCount = allEntries.filter(function (e) { return e.has_behavior; }).length;
+    var html = '共 ' + allEntries.length + ' 个风控条目 · ' + totalRecords + ' 条采集记录 · ' +
+      behaviorCount + ' 个含行为剧本';
     statRow.innerHTML = html;
   }
 
